@@ -83,20 +83,66 @@ Blockchain (Ganache + Solidity Smart Contract)
 
 ## 📂 Project Structure
 
-secure_share/
-│
-├── users/          # Authentication & user management
-├── files/          # File upload & access logic
-├── blockchain/     # Smart contract interaction
-├── ai_monitor/     # AI anomaly detection
-│
-├── templates/      # HTML templates
-├── static/         # CSS & JavaScript
-│
-├── media/          # Encrypted file storage
-├── db.sqlite3
-└── manage.py
+secure_data_share/                  # Root project folder
+├── manage.py
+├── db.sqlite3                      # SQLite database (auto-created)
+├── requirements.txt                # List all dependencies
+├── .env                            # For local secrets (e.g., Ganache URL)
+├── README.md
 
+├── secure_data_share/              # Main Django project folder
+│   ├── __init__.py
+│   ├── settings.py                 # Add your apps, blockchain config, AI settings
+│   ├── urls.py
+│   ├── asgi.py / wsgi.py
+│   └── celery.py                   # (Optional later for background AI tasks)
+
+├── users/                          # Authentication & user management
+│   ├── migrations/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── models.py                   # User model (extends AbstractUser)
+│   ├── views.py
+│   ├── forms.py
+│   ├── urls.py
+│   └── templates/users/            # login, register, profile
+
+├── files/                          # File upload, encryption, access control
+│   ├── migrations/
+│   ├── __init__.py
+│   ├── models.py                   # File & Access models
+│   ├── views.py                    # upload, download, share views
+│   ├── forms.py
+│   ├── utils.py                    # encryption/decryption helpers (AES + Fernet)
+│   ├── urls.py
+│   └── templates/files/
+
+├── blockchain/                     # Interaction with Ganache + Smart Contracts
+│   ├── __init__.py
+│   ├── contracts/                  # Solidity files
+│   │   └── SecureShare.sol         # Smart contract for access control, hashes, logs
+│   ├── web3_utils.py               # Web3.py helpers to interact with Ganache
+│   ├── views.py                    # Views that call smart contract functions
+│   └── tasks.py                    # (Optional) background tasks for on-chain logging
+
+├── ai_monitor/                     # Local AI for anomaly detection & monitoring
+│   ├── __init__.py
+│   ├── models.py                   # (Optional) if you store AI results
+│   ├── anomaly_detector.py         # Main AI logic (IsolationForest + rules)
+│   ├── log_analyzer.py             # Process activity logs from DB
+│   ├── views.py                    # Dashboard to view anomalies/alerts
+│   ├── utils.py                    # Feature extraction from logs
+│   └── templates/ai_monitor/       # anomaly dashboard, alerts
+
+├── templates/                      # Global HTML templates (base.html, etc.)
+│   └── base.html
+
+├── static/                         # CSS, JS, images
+│   ├── css/
+│   └── js/
+
+└── media/                          # Uploaded encrypted files (local storage)
+    └── files/                      # Subfolder for actual file storage
 ---
 
 ## ⚙️ Installation Guide
