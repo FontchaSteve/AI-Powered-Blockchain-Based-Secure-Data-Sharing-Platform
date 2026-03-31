@@ -20,3 +20,4 @@ crispy-bootstrap5
 # Optional but useful
 python-dotenv
 pillow
+py-solc-x
