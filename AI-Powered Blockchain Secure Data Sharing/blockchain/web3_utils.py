@@ -8,7 +8,7 @@ load_dotenv()
 
 # Install Solidity compiler if needed (run once)
 try:
-    install_solc('0.8.20')
+    install_solc('0.8.19')
 except:
     pass
 
