@@ -1,33 +1,57 @@
 {% extends 'base.html' %}
 
-{% block title %}My Files - SecureShare{% endblock %}
+{% block title %}My Secure Files - SecureShare{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>My Secure Files</h2>
-    {% if files %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>File Name</th>
-                    <th>Uploaded On</th>
-                    <th>Blockchain Tx</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for file in files %}
-                <tr>
-                    <td>{{ file.filename }}</td>
-                    <td>{{ file.upload_date|date:"d M Y H:i" }}</td>
-                    <td><small>{{ file.blockchain_tx_hash|slice:":10" }}...</small></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>You haven't uploaded any files yet.</p>
-    {% endif %}
-    
-    <a href="{% url 'upload_file' %}" class="btn btn-primary">Upload New File</a>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>My Secure Files</h2>
+            <a href="{% url 'upload_file' %}" class="btn btn-primary">
+                + Upload New File
+            </a>
+        </div>
+
+        {% if files %}
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>File Name</th>
+                            <th>Uploaded On</th>
+                            <th>Blockchain Tx</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr>
+                            <td>{{ file.filename }}</td>
+                            <td>{{ file.upload_date|date:"d M Y H:i" }}</td>
+                            <td><small class="text-muted">{{ file.blockchain_tx_hash|slice:":16" }}...</small></td>
+                            <td>
+                                <a href="{% url 'download_file' file.id %}" class="btn btn-sm btn-outline-primary">
+                                    Download
+                                </a>
+                                <a href="{% url 'delete_file' file.id %}" 
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to delete this file? This action cannot be undone.')">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <p>You haven't uploaded any files yet.</p>
+            <a href="{% url 'upload_file' %}" class="btn btn-primary mt-3">Upload Your First File</a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

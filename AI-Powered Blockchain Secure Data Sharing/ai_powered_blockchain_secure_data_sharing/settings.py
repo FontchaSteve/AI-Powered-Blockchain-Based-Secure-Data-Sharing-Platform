@@ -105,3 +105,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Auth redirects
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/upload/my-files/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'

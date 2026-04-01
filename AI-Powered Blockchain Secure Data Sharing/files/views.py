@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import FileResponse
+import os
 from .forms import FileUploadForm
 from .encryption_utils import generate_file_hash, encrypt_file, save_encrypted_file
 from .models import File
@@ -15,17 +17,12 @@ def upload_file(request):
             uploaded_file = request.FILES['file']
             file_data = uploaded_file.read()
 
-            # Step 1: Generate hash
             file_hash = generate_file_hash(file_data)
-
-            # Step 2: Encrypt file
             encrypted_data, encryption_key = encrypt_file(file_data)
 
-            # Step 3: Save encrypted file locally
             encrypted_filename = f"enc_{file_hash[:16]}_{uploaded_file.name}"
             file_path = save_encrypted_file(encrypted_data, encrypted_filename)
 
-            # Step 4: Register on Blockchain
             try:
                 w3, contract = get_contract()
                 account = w3.eth.accounts[0]
@@ -39,9 +36,8 @@ def upload_file(request):
                 tx_hash = w3.eth.send_transaction(tx)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
 
-                messages.success(request, f"✅ File uploaded successfully! Tx: {tx_hash.hex()[:10]}...")
+                messages.success(request, f"✅ File uploaded and registered on blockchain! Tx: {tx_hash.hex()[:10]}...")
 
-                # Save to database
                 new_file = File.objects.create(
                     owner=request.user,
                     filename=uploaded_file.name,
@@ -51,7 +47,6 @@ def upload_file(request):
                     blockchain_tx_hash=tx_hash.hex()
                 )
 
-                # Log for AI
                 ActivityLog.objects.create(
                     user=request.user,
                     action='upload',
@@ -76,3 +71,26 @@ def upload_file(request):
 def my_files(request):
     files = File.objects.filter(owner=request.user).order_by('-upload_date')
     return render(request, 'files/my_files.html', {'files': files})
+
+
+@login_required
+def download_file(request, file_id):
+    file_obj = get_object_or_404(File, id=file_id, owner=request.user)
+    response = FileResponse(open(file_obj.encrypted_file_path, 'rb'))
+    response['Content-Disposition'] = f'attachment; filename="{file_obj.filename}"'
+    return response
+
+
+@login_required
+def delete_file(request, file_id):
+    file_obj = get_object_or_404(File, id=file_id, owner=request.user)
+    
+    # Delete encrypted file from disk
+    if os.path.exists(file_obj.encrypted_file_path):
+        os.remove(file_obj.encrypted_file_path)
+    
+    # Delete record from database
+    file_obj.delete()
+    
+    messages.success(request, f"File '{file_obj.filename}' has been deleted successfully.")
+    return redirect('my_files')
