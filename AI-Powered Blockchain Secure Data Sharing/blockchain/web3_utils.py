@@ -40,7 +40,7 @@ def deploy_contract():
     compiled_sol = compile_source(
         contract_source,
         output_values=['abi', 'bin'],
-        solc_version='0.8.20'
+        solc_version='0.8.19'
     )
     
     contract_id, contract_interface = compiled_sol.popitem()

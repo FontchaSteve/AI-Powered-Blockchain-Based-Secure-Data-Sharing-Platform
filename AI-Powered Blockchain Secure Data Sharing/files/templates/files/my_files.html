@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}My Files - SecureShare{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>My Secure Files</h2>
+    {% if files %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Uploaded On</th>
+                    <th>Blockchain Tx</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td>{{ file.filename }}</td>
+                    <td>{{ file.upload_date|date:"d M Y H:i" }}</td>
+                    <td><small>{{ file.blockchain_tx_hash|slice:":10" }}...</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You haven't uploaded any files yet.</p>
+    {% endif %}
+    
+    <a href="{% url 'upload_file' %}" class="btn btn-primary">Upload New File</a>
+</div>
+{% endblock %}
