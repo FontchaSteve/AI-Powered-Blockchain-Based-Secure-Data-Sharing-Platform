@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Monitor - SecureShare{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">🧠 AI Security Monitor</h2>
+            
+            {% if anomalies %}
+            <div class="alert alert-danger">
+                <h5>⚠️ AI Detected {{ anomalies|length }} Suspicious Activities</h5>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                <h5>✅ No anomalies detected. All activity looks normal.</h5>
+            </div>
+            {% endif %}
+
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3>{{ total_uploads }}</h3>
+                            <p class="text-muted">Total Uploads</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3>{{ total_access }}</h3>
+                            <p class="text-muted">Total Accesses</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3>{{ total_failed_logins }}</h3>
+                            <p class="text-muted">Failed Logins</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-5">Recent Activity</h5>
+            <div class="card">
+                <div class="card-body">
+                    {% for log in user_logs %}
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <div>
+                            <strong>{{ log.action|title }}</strong>
+                            <small class="text-muted d-block">{{ log.timestamp|date:"d M Y H:i" }}</small>
+                        </div>
+                        {% if not log.success %}
+                        <span class="badge bg-danger">Failed</span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No recent activity.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -10,6 +10,7 @@
         .navbar { background-color: #0d6efd; }
         .nav-link { color: white !important; }
         .nav-link:hover { color: #e3f2fd !important; }
+        .nav-link.active { font-weight: bold; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -22,6 +23,7 @@
             <div class="navbar-nav ms-auto">
                 <a class="nav-link mx-2" href="{% url 'my_files' %}">My Files</a>
                 <a class="nav-link mx-2" href="{% url 'upload_file' %}">Upload File</a>
+                <a class="nav-link mx-2" href="{% url 'ai_monitor' %}">AI Monitor</a>
                 <a class="nav-link mx-2 text-warning" href="{% url 'logout' %}">
                     Logout ({{ user.username }})
                 </a>

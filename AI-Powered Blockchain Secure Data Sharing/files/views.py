@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import FileResponse
+from django.http import HttpResponse
 import os
 from .forms import FileUploadForm
-from .encryption_utils import generate_file_hash, encrypt_file, save_encrypted_file
+from .encryption_utils import generate_file_hash, encrypt_file, save_encrypted_file, decrypt_file
 from .models import File
 from blockchain.contract_interaction import get_contract
 from users.models import ActivityLog
@@ -36,7 +36,7 @@ def upload_file(request):
                 tx_hash = w3.eth.send_transaction(tx)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
 
-                messages.success(request, f"✅ File uploaded and registered on blockchain! Tx: {tx_hash.hex()[:10]}...")
+                messages.success(request, f"✅ File uploaded and registered on blockchain!")
 
                 new_file = File.objects.create(
                     owner=request.user,
@@ -44,6 +44,7 @@ def upload_file(request):
                     original_filename=uploaded_file.name,
                     file_hash=file_hash,
                     encrypted_file_path=file_path,
+                    encryption_key=encryption_key,
                     blockchain_tx_hash=tx_hash.hex()
                 )
 
@@ -76,20 +77,31 @@ def my_files(request):
 @login_required
 def download_file(request, file_id):
     file_obj = get_object_or_404(File, id=file_id, owner=request.user)
-    response = FileResponse(open(file_obj.encrypted_file_path, 'rb'))
-    response['Content-Disposition'] = f'attachment; filename="{file_obj.filename}"'
-    return response
+    
+    try:
+        with open(file_obj.encrypted_file_path, 'rb') as f:
+            encrypted_data = f.read()
+        
+        # Decrypt the file using stored key
+        decrypted_data = decrypt_file(encrypted_data, file_obj.encryption_key)
+        
+        # Send the original decrypted file to user
+        response = HttpResponse(decrypted_data, content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{file_obj.original_filename}"'
+        return response
+
+    except Exception as e:
+        messages.error(request, f"Download error: {str(e)}")
+        return redirect('my_files')
 
 
 @login_required
 def delete_file(request, file_id):
     file_obj = get_object_or_404(File, id=file_id, owner=request.user)
     
-    # Delete encrypted file from disk
     if os.path.exists(file_obj.encrypted_file_path):
         os.remove(file_obj.encrypted_file_path)
     
-    # Delete record from database
     file_obj.delete()
     
     messages.success(request, f"File '{file_obj.filename}' has been deleted successfully.")
