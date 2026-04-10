@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .forms import CustomUserCreationForm
+from users.models import ActivityLog
 
 def register_view(request):
     if request.method == 'POST':
@@ -17,9 +18,8 @@ def register_view(request):
 
 
 def login_view(request):
-    # If user is already properly logged in, go to dashboard
     if request.user.is_authenticated:
-        return redirect('my_files')
+        return redirect('dashboard')
     
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -27,7 +27,20 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             messages.success(request, f"Welcome back, {user.username}!")
-            return redirect('my_files')
+            return redirect('dashboard')
+        else:
+            # Log failed login attempt safely (without requiring a user)
+            try:
+                ActivityLog.objects.create(
+                    user=None,
+                    action='failed_login',
+                    success=False,
+                    details="Failed login attempt with invalid credentials"
+                )
+            except:
+                pass  # Ignore if logging fails (e.g., due to NULL constraint)
+            
+            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
     

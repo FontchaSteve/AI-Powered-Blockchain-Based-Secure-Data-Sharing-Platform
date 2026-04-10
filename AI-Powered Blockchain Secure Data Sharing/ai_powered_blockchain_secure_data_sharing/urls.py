@@ -3,24 +3,26 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
+from files.views import dashboard   # Import the new dashboard view
 
-# Root URL - Always show Login first if not logged in
 def home(request):
     if request.user.is_authenticated:
-        return redirect('my_files')      # Logged in → go to My Files (temporary dashboard)
-    else:
-        return redirect('login')         # Not logged in → go to Login page
+        return redirect('dashboard')     # After login → go to new Dashboard
+    return redirect('login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    path('', home, name='home'),                    # Root URL
+    path('', home, name='home'),
     
-    # File routes
+    # File related routes
     path('upload/', include('files.urls')),
     
-    # Authentication routes
+    # Authentication
     path('accounts/', include('users.urls')),
+    
+    # AI Monitor
+    path('ai-monitor/', include('ai_monitor.urls')),
 ]
 
 if settings.DEBUG:

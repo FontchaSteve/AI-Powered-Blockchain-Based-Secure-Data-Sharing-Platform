@@ -5,12 +5,7 @@ from .anomaly_detector import detect_anomalies
 
 @login_required
 def ai_monitor(request):
-    """AI Dashboard - Shows activity logs and anomaly detection"""
-    
-    # Get logs for current user
-    user_logs = ActivityLog.objects.filter(user=request.user).order_by('-timestamp')[:30]
-    
-    # Get all anomalies detected by AI
+    user_logs = ActivityLog.objects.filter(user=request.user).order_by('-timestamp')[:50]
     anomalies = detect_anomalies()
     
     context = {

@@ -9,6 +9,22 @@ from .models import File
 from blockchain.contract_interaction import get_contract
 from users.models import ActivityLog
 
+# ====================== MAIN DASHBOARD ======================
+@login_required
+def dashboard(request):
+    recent_files = File.objects.filter(owner=request.user).order_by('-upload_date')[:6]
+    total_files = File.objects.filter(owner=request.user).count()
+    recent_activity = ActivityLog.objects.filter(user=request.user).order_by('-timestamp')[:10]
+    
+    context = {
+        'recent_files': recent_files,
+        'total_files': total_files,
+        'recent_activity': recent_activity,
+    }
+    return render(request, 'files/dashboard.html', context)
+
+
+# ====================== UPLOAD ======================
 @login_required
 def upload_file(request):
     if request.method == 'POST':
@@ -56,7 +72,7 @@ def upload_file(request):
                     details=f"File uploaded: {uploaded_file.name}"
                 )
 
-                return redirect('my_files')
+                return redirect('dashboard')
 
             except Exception as e:
                 messages.error(request, f"Blockchain error: {str(e)}")
@@ -68,12 +84,7 @@ def upload_file(request):
     return render(request, 'files/upload.html', {'form': form})
 
 
-@login_required
-def my_files(request):
-    files = File.objects.filter(owner=request.user).order_by('-upload_date')
-    return render(request, 'files/my_files.html', {'files': files})
-
-
+# ====================== DOWNLOAD (Fixed with decryption) ======================
 @login_required
 def download_file(request, file_id):
     file_obj = get_object_or_404(File, id=file_id, owner=request.user)
@@ -82,19 +93,27 @@ def download_file(request, file_id):
         with open(file_obj.encrypted_file_path, 'rb') as f:
             encrypted_data = f.read()
         
-        # Decrypt the file using stored key
         decrypted_data = decrypt_file(encrypted_data, file_obj.encryption_key)
-        
-        # Send the original decrypted file to user
+
+        # Log the download activity
+        ActivityLog.objects.create(
+            user=request.user,
+            action='download',
+            file_hash=file_obj.file_hash,
+            success=True,
+            details=f"File downloaded: {file_obj.filename}"
+        )
+
         response = HttpResponse(decrypted_data, content_type='application/octet-stream')
         response['Content-Disposition'] = f'attachment; filename="{file_obj.original_filename}"'
         return response
 
     except Exception as e:
         messages.error(request, f"Download error: {str(e)}")
-        return redirect('my_files')
+        return redirect('dashboard')
 
 
+# ====================== DELETE (Fixed with activity log) ======================
 @login_required
 def delete_file(request, file_id):
     file_obj = get_object_or_404(File, id=file_id, owner=request.user)
@@ -104,5 +123,21 @@ def delete_file(request, file_id):
     
     file_obj.delete()
     
+    # Log the delete activity
+    ActivityLog.objects.create(
+        user=request.user,
+        action='delete',
+        file_hash=file_obj.file_hash,
+        success=True,
+        details=f"File deleted: {file_obj.filename}"
+    )
+    
     messages.success(request, f"File '{file_obj.filename}' has been deleted successfully.")
-    return redirect('my_files')
+    return redirect('dashboard')
+
+
+# ====================== MY FILES ======================
+@login_required
+def my_files(request):
+    files = File.objects.filter(owner=request.user).order_by('-upload_date')
+    return render(request, 'files/my_files.html', {'files': files})

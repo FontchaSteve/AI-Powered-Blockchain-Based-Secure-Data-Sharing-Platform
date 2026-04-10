@@ -5,12 +5,16 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">📤 Upload Secure File</h4>
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white py-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-cloud-upload fs-3 me-3"></i>
+                        <h4 class="mb-0">Upload Secure File</h4>
+                    </div>
                 </div>
-                <div class="card-body">
+                
+                <div class="card-body p-5">
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
@@ -20,31 +24,89 @@
                         {% endfor %}
                     {% endif %}
 
-                    <form method="POST" enctype="multipart/form-data">
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
                         {% csrf_token %}
                         
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Select File to Upload Securely</label>
-                            {{ form.file }}
-                            <small class="text-muted">
-                                The file will be encrypted locally before uploading to blockchain.
-                            </small>
+                            <label class="form-label fw-semibold fs-5">Select or Drop File</label>
+                            
+                            <!-- Drag & Drop Area -->
+                            <div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light"
+                                 style="cursor: pointer; transition: all 0.3s;">
+                                {{ form.file }}
+                                <p class="text-muted mt-3 mb-1 fs-5">
+                                    <i class="bi bi-cloud-upload fs-2 text-primary"></i>
+                                </p>
+                                <p class="text-muted mb-0">
+                                    Drag & drop your file here<br>
+                                    or <strong>click to browse</strong>
+                                </p>
+                                <small class="text-muted">The file will be encrypted locally with AES-256</small>
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success btn-lg w-100">
-                            🔐 Encrypt & Upload to Blockchain
+                        <button type="submit" id="uploadBtn" class="btn btn-success btn-lg w-100 py-3 fw-semibold">
+                            <i class="bi bi-lock"></i> Encrypt & Upload to Blockchain
                         </button>
                     </form>
                 </div>
-                <div class="card-footer text-muted">
-                    <small>
-                        ✅ File will be encrypted with AES-256<br>
-                        ✅ Hash will be stored on Blockchain<br>
-                        ✅ Only you control access
-                    </small>
+
+                <div class="card-footer bg-light py-3">
+                    <div class="row text-center small text-muted">
+                        <div class="col">
+                            <i class="bi bi-shield-lock"></i> AES-256 Encryption
+                        </div>
+                        <div class="col">
+                            <i class="bi bi-link-45deg"></i> Blockchain Hash
+                        </div>
+                        <div class="col">
+                            <i class="bi bi-eye-slash"></i> Private & Secure
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Drag and Drop Functionality
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.querySelector('input[type="file"]');
+const uploadBtn = document.getElementById('uploadBtn');
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#0d6efd';
+    dropZone.style.backgroundColor = '#f0f8ff';
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = '';
+    dropZone.style.backgroundColor = '';
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '';
+    dropZone.style.backgroundColor = '';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        // Optional: auto submit or show file name
+        console.log('File dropped:', files[0].name);
+    }
+});
+
+dropZone.addEventListener('click', () => {
+    fileInput.click();
+});
+
+// Loading effect on submit
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Encrypting & Uploading...';
+    uploadBtn.disabled = true;
+});
+</script>
 {% endblock %}

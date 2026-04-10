@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SecureShare{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <!-- Welcome Header -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="bg-white rounded-4 shadow p-5 text-center">
+                <h1 class="display-5 fw-bold text-dark mb-2">
+                    Welcome back, <span class="text-primary">{{ user.username }}</span> 👋
+                </h1>
+                <p class="lead text-muted">
+                    Your files are encrypted, stored securely, and monitored by AI in real-time.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow h-100 text-center">
+                <div class="card-body py-4">
+                    <div class="text-primary mb-3">
+                        <i class="bi bi-file-earmark-richtext fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ total_files|default:0 }}</h2>
+                    <p class="text-muted">Total Secure Files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow h-100 text-center">
+                <div class="card-body py-4">
+                    <div class="text-success mb-3">
+                        <i class="bi bi-cloud-upload fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ recent_files|length }}</h2>
+                    <p class="text-muted">Recent Uploads</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow h-100 text-center">
+                <div class="card-body py-4">
+                    <div class="text-info mb-3">
+                        <i class="bi bi-shield-lock fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">100%</h2>
+                    <p class="text-muted">Blockchain Secured</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow h-100 text-center">
+                <div class="card-body py-4">
+                    <div class="text-warning mb-3">
+                        <i class="bi bi-robot fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">Active</h2>
+                    <p class="text-muted">AI Monitoring</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                <a href="{% url 'upload_file' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Upload New File</span>
+                </a>
+                
+                <a href="{% url 'my_files' %}" class="btn btn-outline-primary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
+                    <i class="bi bi-folder2"></i>
+                    <span>Browse All Files</span>
+                </a>
+                
+                <a href="{% url 'ai_monitor' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
+                    <i class="bi bi-robot"></i>
+                    <span>AI Security Monitor</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Files -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">Recent Files</h5>
+                <a href="{% url 'my_files' %}" class="text-primary text-decoration-none">View All Files →</a>
+            </div>
+
+            {% if recent_files %}
+            <div class="row g-4">
+                {% for file in recent_files %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-file-earmark-text fs-3 text-primary me-3"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 text-truncate">{{ file.filename }}</h6>
+                                    <small class="text-muted">{{ file.upload_date|date:"d M Y • H:i" }}</small>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <a href="{% url 'download_file' file.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5 bg-light rounded-3">
+                <p class="text-muted mb-3">You haven't uploaded any files yet.</p>
+                <a href="{% url 'upload_file' %}" class="btn btn-primary">Upload Your First File</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
