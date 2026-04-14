@@ -21,9 +21,13 @@ def detect_anomalies():
 
     data = []
     for log in logs:
+        # ← FIXED: user can be None for failed_login events — handle gracefully
+        user_id = log.user.id if log.user else 0
+        username = log.user.username if log.user else 'Anonymous'
+
         data.append({
-            'user_id': log.user.id,
-            'username': log.user.username,
+            'user_id': user_id,
+            'username': username,
             'action': log.action,
             'hour': log.timestamp.hour,
             'day_of_week': log.timestamp.weekday(),
