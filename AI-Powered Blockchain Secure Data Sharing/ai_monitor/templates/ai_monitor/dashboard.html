@@ -21,7 +21,7 @@
                 <div class="card-body text-center">
                     <i class="bi bi-upload fs-1 text-primary mb-3"></i>
                     <h3 class="fw-bold">{{ total_uploads }}</h3>
-                    <p class="text-muted mb-0">Uploads</p>
+                    <p class="text-muted mb-0">Total Uploads</p>
                 </div>
             </div>
         </div>
@@ -46,9 +46,9 @@
         <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-sm h-100 bg-light">
                 <div class="card-body text-center">
-                    <i class="bi bi-brain fs-1 text-warning mb-3"></i>
-                    <h3 class="fw-bold text-warning">AI</h3>
-                    <p class="text-muted mb-0">Anomaly Detection</p>
+                    <i class="bi bi-robot fs-1 text-warning mb-3"></i>
+                    <h3 class="fw-bold text-warning">{{ anomalies|length }}</h3>
+                    <p class="text-muted mb-0">Anomalies Detected</p>
                 </div>
             </div>
         </div>
@@ -63,16 +63,17 @@
         <div class="row g-3">
             {% for anomaly in anomalies %}
             <div class="col-12">
-                <div class="alert alert-{{ anomaly.severity|default:'danger' }} d-flex align-items-start">
+                <!-- FIXED: uses bootstrap_class (danger/warning/info) not raw severity (high/medium/low) -->
+                <div class="alert alert-{{ anomaly.bootstrap_class }} d-flex align-items-start">
                     <i class="bi bi-shield-exclamation fs-4 me-3 mt-1"></i>
                     <div class="flex-grow-1">
                         <strong>{{ anomaly.description }}</strong>
                         {% if anomaly.time %}
-                        <small class="d-block text-muted">{{ anomaly.time }}</small>
+                        <small class="d-block text-muted mt-1">{{ anomaly.time }}</small>
                         {% endif %}
                     </div>
-                    <span class="badge bg-{{ anomaly.severity|default:'danger' }}">
-                        {{ anomaly.severity|upper|default:'HIGH' }}
+                    <span class="badge bg-{{ anomaly.bootstrap_class }} ms-3">
+                        {{ anomaly.severity|upper|default:'MEDIUM' }}
                     </span>
                 </div>
             </div>
@@ -86,7 +87,7 @@
     </div>
     {% endif %}
 
-    <!-- Recent Activity -->
+    <!-- Recent Activity Log -->
     <h5 class="mb-3">Recent Activity Log</h5>
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -96,6 +97,7 @@
                         <tr>
                             <th>Action</th>
                             <th>Time</th>
+                            <th>IP Address</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -104,6 +106,7 @@
                         <tr>
                             <td><strong>{{ log.action|title }}</strong></td>
                             <td>{{ log.timestamp|date:"d M Y • H:i" }}</td>
+                            <td><small class="text-muted">{{ log.ip_address|default:"—" }}</small></td>
                             <td>
                                 {% if log.success %}
                                     <span class="badge bg-success">Success</span>
@@ -114,7 +117,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="text-center py-4 text-muted">No activity recorded yet.</td>
+                            <td colspan="4" class="text-center py-4 text-muted">No activity recorded yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -125,7 +128,7 @@
 
     <div class="text-center mt-4">
         <small class="text-muted">
-            AI Model: Isolation Forest • Monitoring last 30 days • Updated just now
+            AI Model: Isolation Forest &bull; Monitoring last 30 days &bull; Updated just now
         </small>
     </div>
 
