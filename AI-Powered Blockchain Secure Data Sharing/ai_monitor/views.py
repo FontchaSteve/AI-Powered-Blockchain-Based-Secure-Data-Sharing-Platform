@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from users.models import ActivityLog
 from .anomaly_detector import detect_anomalies
 
-# Map model severity levels → Bootstrap alert classes
 SEVERITY_TO_BOOTSTRAP = {
     'high':   'danger',
     'medium': 'warning',
@@ -14,11 +13,14 @@ SEVERITY_TO_BOOTSTRAP = {
 
 @login_required
 def ai_monitor(request):
-    user_logs = ActivityLog.objects.filter(user=request.user).order_by('-timestamp')[:50]
+    # ✅ FIXED: all queries filtered to current user only
+    user_logs = ActivityLog.objects.filter(
+        user=request.user
+    ).order_by('-timestamp')[:50]
 
-    raw_anomalies = detect_anomalies()
+    # Anomalies scoped to this user
+    raw_anomalies = detect_anomalies(user=request.user)
 
-    # Attach the correct Bootstrap colour class to each anomaly
     anomalies = []
     for anomaly in raw_anomalies:
         severity = anomaly.get('severity', 'medium')
@@ -26,12 +28,13 @@ def ai_monitor(request):
         anomalies.append(anomaly)
 
     context = {
-        'user_logs': user_logs,
-        'anomalies': anomalies,
-        # ← FIXED: filter by current user so each user only sees their own stats
-        'total_uploads': ActivityLog.objects.filter(user=request.user, action='upload').count(),
-        'total_access': ActivityLog.objects.filter(user=request.user, action__in=['access', 'download']).count(),
+        'user_logs':           user_logs,
+        'anomalies':           anomalies,
+        # ✅ FIXED: filtered by current user — not system-wide counts
+        'total_uploads':       ActivityLog.objects.filter(user=request.user, action='upload').count(),
+        'total_downloads':     ActivityLog.objects.filter(user=request.user, action='download').count(),
         'total_failed_logins': ActivityLog.objects.filter(user=request.user, action='failed_login').count(),
+        'total_anomalies':     len(anomalies),
     }
 
     return render(request, 'ai_monitor/dashboard.html', context)
