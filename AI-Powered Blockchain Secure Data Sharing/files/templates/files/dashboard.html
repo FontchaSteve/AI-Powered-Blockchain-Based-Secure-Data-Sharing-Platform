@@ -1,133 +1,170 @@
 {% extends 'base.html' %}
-
-{% block title %}Dashboard - SecureShare{% endblock %}
+{% block title %}Dashboard — SecureShare{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
 
-    <!-- Welcome Header -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="bg-white rounded-4 shadow p-5 text-center">
-                <h1 class="display-5 fw-bold text-dark mb-2">
-                    Welcome back, <span class="text-primary">{{ user.username }}</span> 👋
-                </h1>
-                <p class="lead text-muted">
-                    Your files are encrypted, stored securely, and monitored by AI in real-time.
-                </p>
-            </div>
-        </div>
+<!-- Welcome -->
+<div style="margin-bottom:32px;">
+    <div class="ss-section-title">// Command Center</div>
+    <div style="display:flex;align-items:baseline;gap:12px;">
+        <h1 style="font-family:var(--mono);font-size:28px;color:var(--accent);text-shadow:0 0 20px rgba(0,212,255,0.3);">
+            {{ user.username|upper }}
+        </h1>
+        <span class="text-dim mono" style="font-size:12px;letter-spacing:2px;">SECURE VAULT ACTIVE</span>
     </div>
+</div>
 
-    <!-- Quick Stats -->
-    <div class="row g-4 mb-5">
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow h-100 text-center">
-                <div class="card-body py-4">
-                    <div class="text-primary mb-3">
-                        <i class="bi bi-file-earmark-richtext fs-1"></i>
-                    </div>
-                    <h2 class="fw-bold mb-0">{{ total_files|default:0 }}</h2>
-                    <p class="text-muted">Total Secure Files</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow h-100 text-center">
-                <div class="card-body py-4">
-                    <div class="text-success mb-3">
-                        <i class="bi bi-cloud-upload fs-1"></i>
-                    </div>
-                    <h2 class="fw-bold mb-0">{{ recent_files|length }}</h2>
-                    <p class="text-muted">Recent Uploads</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow h-100 text-center">
-                <div class="card-body py-4">
-                    <div class="text-info mb-3">
-                        <i class="bi bi-shield-lock fs-1"></i>
-                    </div>
-                    <h2 class="fw-bold mb-0">100%</h2>
-                    <p class="text-muted">Blockchain Secured</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow h-100 text-center">
-                <div class="card-body py-4">
-                    <div class="text-warning mb-3">
-                        <i class="bi bi-robot fs-1"></i>
-                    </div>
-                    <h2 class="fw-bold mb-0">Active</h2>
-                    <p class="text-muted">AI Monitoring</p>
-                </div>
-            </div>
-        </div>
+<!-- Stats -->
+<div class="ss-grid ss-grid-4 mb-5">
+    <div class="ss-stat">
+        <span class="ss-stat-icon text-accent"><i class="bi bi-file-earmark-lock"></i></span>
+        <div class="ss-stat-value">{{ total_files }}</div>
+        <div class="ss-stat-label">Encrypted Files</div>
     </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:var(--accent3);"><i class="bi bi-people"></i></span>
+        <div class="ss-stat-value" style="color:var(--accent3);">{{ shared_with_me }}</div>
+        <div class="ss-stat-label">Shared With Me</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-shield-check"></i></span>
+        <div class="ss-stat-value" style="color:var(--success);">100%</div>
+        <div class="ss-stat-label">Blockchain Secured</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-robot"></i></span>
+        <div class="ss-stat-value" style="color:var(--warning);font-size:22px;padding-top:6px;">ACTIVE</div>
+        <div class="ss-stat-label">AI Monitor</div>
+    </div>
+</div>
 
-    <!-- Quick Actions -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="d-flex flex-wrap gap-3 justify-content-center">
-                <a href="{% url 'upload_file' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
-                    <i class="bi bi-cloud-upload"></i>
-                    <span>Upload New File</span>
-                </a>
-                
-                <a href="{% url 'my_files' %}" class="btn btn-outline-primary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
-                    <i class="bi bi-folder2"></i>
-                    <span>Browse All Files</span>
-                </a>
-                
-                <a href="{% url 'ai_monitor' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 shadow-sm d-flex align-items-center gap-2">
-                    <i class="bi bi-robot"></i>
-                    <span>AI Security Monitor</span>
-                </a>
-            </div>
-        </div>
+<!-- Quick Actions -->
+<div class="mb-5">
+    <div class="ss-section-title">// Quick Actions</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary" style="font-size:13px;padding:12px 24px;">
+            <i class="bi bi-cloud-upload"></i> Upload File
+        </a>
+        <a href="{% url 'my_files' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
+            <i class="bi bi-folder2"></i> My Files
+        </a>
+        <a href="{% url 'shared_with_me' %}" class="ss-btn ss-btn-purple" style="font-size:13px;padding:12px 24px;">
+            <i class="bi bi-people"></i> Shared With Me
+        </a>
+        <a href="{% url 'blockchain_verify' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
+            <i class="bi bi-link-45deg"></i> Blockchain Verify
+        </a>
+        <a href="{% url 'ai_monitor' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
+            <i class="bi bi-robot"></i> AI Monitor
+        </a>
     </div>
+</div>
+
+<div class="ss-grid ss-grid-2" style="gap:24px;">
 
     <!-- Recent Files -->
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="mb-0">Recent Files</h5>
-                <a href="{% url 'my_files' %}" class="text-primary text-decoration-none">View All Files →</a>
-            </div>
-
-            {% if recent_files %}
-            <div class="row g-4">
-                {% for file in recent_files %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="bi bi-file-earmark-text fs-3 text-primary me-3"></i>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 text-truncate">{{ file.filename }}</h6>
-                                    <small class="text-muted">{{ file.upload_date|date:"d M Y • H:i" }}</small>
-                                </div>
-                            </div>
-                            <div class="d-grid">
-                                <a href="{% url 'download_file' file.id %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-download"></i> Download
-                                </a>
-                            </div>
-                        </div>
+    <div class="ss-card">
+        <div class="ss-card-header">
+            <i class="bi bi-clock-history"></i> Recent Files
+            <a href="{% url 'my_files' %}" class="text-dim mono" style="margin-left:auto;font-size:10px;text-decoration:none;letter-spacing:1px;">VIEW ALL →</a>
+        </div>
+        {% if recent_files %}
+        <div>
+            {% for file in recent_files %}
+            <div style="
+                display:flex;align-items:center;gap:12px;
+                padding:12px 20px;
+                border-bottom:1px solid rgba(15,45,70,0.5);
+                transition:background 0.15s;
+            " onmouseover="this.style.background='rgba(0,212,255,0.03)'" onmouseout="this.style.background=''">
+                <span style="font-size:22px;">📄</span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:13px;" class="truncate">{{ file.filename }}</div>
+                    <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">
+                        {{ file.upload_date|date:"d M Y · H:i" }}
                     </div>
                 </div>
-                {% endfor %}
+                <div style="display:flex;gap:6px;">
+                    <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple">
+                        <i class="bi bi-share"></i>
+                    </a>
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-5 bg-light rounded-3">
-                <p class="text-muted mb-3">You haven't uploaded any files yet.</p>
-                <a href="{% url 'upload_file' %}" class="btn btn-primary">Upload Your First File</a>
-            </div>
-            {% endif %}
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="ss-card-body" style="text-align:center;padding:40px;">
+            <i class="bi bi-cloud-upload" style="font-size:40px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+            <div class="text-dim mono" style="font-size:12px;letter-spacing:2px;margin-bottom:16px;">NO FILES YET</div>
+            <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary">Upload First File</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="ss-card">
+        <div class="ss-card-header">
+            <i class="bi bi-activity"></i> Recent Activity
+            <a href="{% url 'ai_monitor' %}" class="text-dim mono" style="margin-left:auto;font-size:10px;text-decoration:none;letter-spacing:1px;">FULL LOG →</a>
+        </div>
+        {% if recent_activity %}
+        <div>
+            {% for log in recent_activity %}
+            <div style="
+                display:flex;align-items:center;gap:12px;
+                padding:10px 20px;
+                border-bottom:1px solid rgba(15,45,70,0.5);
+            ">
+                <div style="width:32px;text-align:center;">
+                    {% if log.action == 'upload' %}<i class="bi bi-upload" style="color:var(--accent);"></i>
+                    {% elif log.action == 'download' %}<i class="bi bi-download" style="color:var(--success);"></i>
+                    {% elif log.action == 'delete' %}<i class="bi bi-trash" style="color:var(--danger);"></i>
+                    {% elif log.action == 'login' %}<i class="bi bi-box-arrow-in-right" style="color:var(--warning);"></i>
+                    {% elif log.action == 'share' %}<i class="bi bi-share" style="color:#a78bfa;"></i>
+                    {% else %}<i class="bi bi-dot text-dim"></i>{% endif %}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:600;">{{ log.action|upper }}</div>
+                    <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">{{ log.timestamp|date:"d M · H:i" }}</div>
+                </div>
+                {% if log.success %}
+                    <span class="ss-badge ss-badge-success">OK</span>
+                {% else %}
+                    <span class="ss-badge ss-badge-danger">FAIL</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="ss-card-body" style="text-align:center;padding:40px;">
+            <i class="bi bi-clock" style="font-size:40px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+            <div class="text-dim mono" style="font-size:12px;letter-spacing:2px;">NO ACTIVITY YET</div>
+        </div>
+        {% endif %}
     </div>
 
 </div>
+
+<!-- System status bar -->
+<div style="
+    margin-top:32px;padding:12px 20px;
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+">
+    <div style="display:flex;align-items:center;gap:6px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse 2s infinite;display:inline-block;"></span>
+        <span class="mono text-dim" style="font-size:10px;letter-spacing:2px;">SYSTEM ONLINE</span>
+    </div>
+    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  AES-256 ENCRYPTION</span>
+    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  BLOCKCHAIN: GANACHE LOCAL</span>
+    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  AI MONITOR: ISOLATION FOREST</span>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+
 {% endblock %}

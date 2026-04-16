@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Share File — SecureShare{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// Share File</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
+            GRANT ACCESS TO OTHER USERS
+        </p>
+    </div>
+    <a href="{% url 'my_files' %}" class="ss-btn">
+        <i class="bi bi-arrow-left"></i> Back to My Files
+    </a>
+</div>
+
+<!-- File Info -->
+<div class="ss-card mb-4">
+    <div class="ss-card-header">
+        <i class="bi bi-file-earmark-lock"></i> File Details
+    </div>
+    <div class="ss-card-body">
+        <div style="display:flex;align-items:center;gap:16px;">
+            <span style="font-size:40px;">📄</span>
+            <div>
+                <div style="font-size:18px;font-weight:700;margin-bottom:4px;">{{ file.filename }}</div>
+                <div class="mono text-dim" style="font-size:11px;letter-spacing:1px;">
+                    HASH: {{ file.file_hash }}<br>
+                    UPLOADED: {{ file.upload_date|date:"d M Y · H:i" }}<br>
+                    OWNER: {{ file.owner.username }}
+                </div>
+            </div>
+            <div style="margin-left:auto;">
+                {% if file.blockchain_tx_hash %}
+                    <span class="ss-badge ss-badge-success"><i class="bi bi-check-circle"></i> Blockchain Verified</span>
+                {% else %}
+                    <span class="ss-badge ss-badge-gray">Not on blockchain</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Form -->
+<div class="ss-grid ss-grid-2" style="gap:24px;">
+
+    <!-- Grant Access -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-person-plus"></i> Grant Access</div>
+        <div class="ss-card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="share">
+
+                <div class="mb-4">
+                    <label class="ss-label">Username to share with</label>
+                    <input type="text" name="username" class="ss-input"
+                           placeholder="Enter exact username..." required
+                           autocomplete="off">
+                    <div class="text-dim mono mt-2" style="font-size:10px;letter-spacing:1px;">
+                        The user must already have an account on SecureShare.
+                    </div>
+                </div>
+
+                <button type="submit" class="ss-btn ss-btn-primary w-100">
+                    <i class="bi bi-share"></i> Share File
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Shares -->
+    <div class="ss-card">
+        <div class="ss-card-header">
+            <i class="bi bi-people"></i> Who Has Access
+            <span class="ss-badge ss-badge-info" style="margin-left:8px;">{{ current_shares|length }}</span>
+        </div>
+        <div class="ss-card-body" style="padding:0;">
+            {% if current_shares %}
+                {% for share in current_shares %}
+                <div style="
+                    display:flex;align-items:center;gap:12px;
+                    padding:14px 20px;
+                    border-bottom:1px solid var(--border);
+                ">
+                    <!-- Avatar -->
+                    <div style="
+                        width:36px;height:36px;border-radius:50%;
+                        background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);
+                        display:flex;align-items:center;justify-content:center;
+                        font-family:var(--mono);font-size:13px;color:var(--accent);
+                        flex-shrink:0;
+                    ">{{ share.shared_with.username|slice:":2"|upper }}</div>
+
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:14px;">{{ share.shared_with.username }}</div>
+                        <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">
+                            Shared {{ share.shared_at|date:"d M Y" }}
+                            {% if share.expires_at %}· Expires {{ share.expires_at|date:"d M Y" }}{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Revoke -->
+                    <form method="POST" onsubmit="return confirm('Revoke access for {{ share.shared_with.username }}?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="revoke">
+                        <input type="hidden" name="share_id" value="{{ share.id }}">
+                        <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger">
+                            <i class="bi bi-x"></i> Revoke
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div style="text-align:center;padding:40px 20px;">
+                <i class="bi bi-people" style="font-size:32px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+                <div class="text-dim mono" style="font-size:11px;letter-spacing:2px;">NOT SHARED WITH ANYONE</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- How sharing works -->
+<div class="ss-card mt-4">
+    <div class="ss-card-header"><i class="bi bi-info-circle"></i> How File Sharing Works</div>
+    <div class="ss-card-body">
+        <div class="ss-grid ss-grid-3" style="gap:16px;">
+            <div style="text-align:center;padding:16px;">
+                <div style="font-size:28px;margin-bottom:8px;">🔐</div>
+                <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">ENCRYPTED TRANSFER</div>
+                <div class="text-dim" style="font-size:13px;">The file stays encrypted on the server. The recipient can download and decrypt it.</div>
+            </div>
+            <div style="text-align:center;padding:16px;">
+                <div style="font-size:28px;margin-bottom:8px;">⛓</div>
+                <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">BLOCKCHAIN RECORD</div>
+                <div class="text-dim" style="font-size:13px;">Access grants are recorded in the smart contract for full auditability.</div>
+            </div>
+            <div style="text-align:center;padding:16px;">
+                <div style="font-size:28px;margin-bottom:8px;">🛡</div>
+                <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">YOU STAY IN CONTROL</div>
+                <div class="text-dim" style="font-size:13px;">Revoke access at any time. The AI monitor tracks every access event.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

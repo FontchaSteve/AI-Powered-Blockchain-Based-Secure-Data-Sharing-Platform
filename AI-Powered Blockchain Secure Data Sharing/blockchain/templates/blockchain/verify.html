@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}Blockchain Verify — SecureShare{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <div class="ss-section-title">// Blockchain Verification</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
+            VERIFY FILE INTEGRITY ON-CHAIN · GANACHE LOCAL NETWORK
+        </p>
+    </div>
+</div>
+
+<!-- Search Box -->
+<div class="ss-card mb-5">
+    <div class="ss-card-header"><i class="bi bi-search"></i> Look Up a File Hash</div>
+    <div class="ss-card-body">
+        <form method="GET" action="{% url 'blockchain_verify' %}">
+            <div class="d-flex align-items-center gap-2" style="gap:12px;">
+                <div style="flex:1;">
+                    <label class="ss-label">SHA-256 File Hash</label>
+                    <input type="text" name="hash" class="ss-input"
+                           value="{{ file_hash }}"
+                           placeholder="Enter 64-character file hash…"
+                           style="font-family:var(--mono);">
+                </div>
+                <button type="submit" class="ss-btn ss-btn-primary" style="align-self:flex-end;height:40px;">
+                    <i class="bi bi-search"></i> Verify
+                </button>
+            </div>
+        </form>
+
+        <!-- Quick links from user's own files -->
+        {% if my_files %}
+        <div class="mt-4">
+            <div class="text-dim mono mb-3" style="font-size:10px;letter-spacing:2px;">OR SELECT FROM YOUR FILES</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                {% for f in my_files|slice:":8" %}
+                <a href="{% url 'blockchain_verify' %}?hash={{ f.file_hash }}"
+                   class="ss-btn ss-btn-sm {% if file_hash == f.file_hash %}ss-btn-primary{% endif %}">
+                    <i class="bi bi-file-earmark"></i>
+                    {{ f.filename|truncatechars:20 }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Results -->
+{% if result %}
+<div class="mb-4">
+    <div class="ss-section-title">// Verification Result</div>
+</div>
+
+{% if result.verified %}
+<div class="verification-banner" style="padding:24px;border-radius:10px;margin-bottom:24px;background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.3);display:flex;align-items:center;gap:16px;">
+    <i class="bi bi-shield-check" style="font-size:40px;color:var(--success);"></i>
+    <div>
+        <div style="font-size:18px;font-weight:700;color:var(--success);">✅ VERIFIED ON BLOCKCHAIN</div>
+        <div class="text-dim mono" style="font-size:11px;margin-top:4px;letter-spacing:1px;">
+            This file hash exists on-chain and has not been tampered with.
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="verification-banner" style="padding:24px;border-radius:10px;margin-bottom:24px;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.3);display:flex;align-items:center;gap:16px;">
+    <i class="bi bi-shield-x" style="font-size:40px;color:var(--danger);"></i>
+    <div>
+        <div style="font-size:18px;font-weight:700;color:var(--danger);">⚠ NOT FOUND ON BLOCKCHAIN</div>
+        <div class="text-dim mono" style="font-size:11px;margin-top:4px;letter-spacing:1px;">
+            {% if result.blockchain_error %}
+                Error: {{ result.blockchain_error }}
+            {% else %}
+                This hash has no record on the blockchain.
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row gy-4">
+    <div class="col-lg-6">
+        <div class="ss-card">
+            <div class="ss-card-header">
+                <i class="bi bi-link-45deg"></i> Blockchain Record
+            </div>
+            <div class="ss-card-body">
+                {% if result.blockchain_data %}
+                <table style="width:100%;border-collapse:collapse;">
+                    {% with bd=result.blockchain_data %}
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;width:40%;">FILE HASH</td>
+                        <td class="mono" style="font-size:11px;padding:10px 0;word-break:break-all;color:var(--accent);">{{ bd.file_hash }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">OWNER WALLET</td>
+                        <td class="mono" style="font-size:11px;padding:10px 0;word-break:break-all;">{{ bd.owner_wallet }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">UPLOAD TIME</td>
+                        <td class="mono" style="font-size:12px;padding:10px 0;">{{ bd.upload_time }}</td>
+                    </tr>
+                    <tr>
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">STATUS</td>
+                        <td style="padding:10px 0;">
+                            {% if bd.is_active %}
+                                <span class="ss-badge ss-badge-success">ACTIVE</span>
+                            {% else %}
+                                <span class="ss-badge ss-badge-danger">INACTIVE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                </table>
+                {% else %}
+                <div style="text-align:center;padding:30px 0;color:var(--text-dim);">
+                    <i class="bi bi-x-circle" style="font-size:32px;display:block;margin-bottom:12px;"></i>
+                    <div class="mono" style="font-size:11px;letter-spacing:2px;">NO BLOCKCHAIN RECORD</div>
+                    {% if result.blockchain_error %}
+                    <div class="mono mt-2" style="font-size:10px;color:var(--danger);">{{ result.blockchain_error }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="ss-card">
+            <div class="ss-card-header">
+                <i class="bi bi-database"></i> Local Database Record
+            </div>
+            <div class="ss-card-body">
+                {% if result.db_file %}
+                {% with f=result.db_file %}
+                <table style="width:100%;border-collapse:collapse;">
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;width:40%;">FILENAME</td>
+                        <td style="font-size:14px;padding:10px 0;font-weight:600;">{{ f.filename }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">OWNER</td>
+                        <td style="font-size:14px;padding:10px 0;">{{ f.owner.username }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">UPLOADED</td>
+                        <td class="mono" style="font-size:12px;padding:10px 0;">{{ f.upload_date|date:"d M Y · H:i" }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">TX HASH</td>
+                        <td class="mono" style="font-size:11px;padding:10px 0;word-break:break-all;">
+                            {% if f.blockchain_tx_hash %}
+                                <span style="color:var(--success);">{{ f.blockchain_tx_hash }}</span>
+                            {% else %}
+                                <span style="color:var(--text-dim);">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">ENCRYPTION</td>
+                        <td style="padding:10px 0;"><span class="ss-badge ss-badge-info">AES-256</span></td>
+                    </tr>
+                </table>
+                {% endwith %}
+                {% else %}
+                <div style="text-align:center;padding:30px 0;color:var(--text-dim);">
+                    <i class="bi bi-database-x" style="font-size:32px;display:block;margin-bottom:12px;"></i>
+                    <div class="mono" style="font-size:11px;letter-spacing:2px;">NOT IN LOCAL DATABASE</div>
+                    <div class="text-dim mt-2" style="font-size:12px;">This file may belong to another system.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ss-card mt-4">
+    <div class="ss-card-header"><i class="bi bi-info-circle"></i> What This Means</div>
+    <div class="ss-card-body">
+        <div class="row gy-4">
+            <div class="col-lg-4 col-md-6">
+                <div style="padding:12px;">
+                    <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:8px;">HASH MATCH</div>
+                    <div class="text-dim" style="font-size:13px;">The SHA-256 hash is a unique fingerprint. If it's on-chain, the file was registered at upload time.</div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div style="padding:12px;">
+                    <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:8px;">TAMPER PROOF</div>
+                    <div class="text-dim" style="font-size:13px;">If someone modified the file, its hash would change and no longer match the blockchain record.</div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div style="padding:12px;">
+                    <div class="mono" style="font-size:11px;letter-spacing:1px;color:var(--accent);margin-bottom:8px;">IPFS READY</div>
+                    <div class="text-dim" style="font-size:13px;">The same hash system works with IPFS — the hash becomes the content address for distributed storage.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
