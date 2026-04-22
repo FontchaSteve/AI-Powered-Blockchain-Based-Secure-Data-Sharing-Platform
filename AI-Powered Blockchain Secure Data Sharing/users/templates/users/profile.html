@@ -79,6 +79,15 @@
 .status-text-disabled {
   color: var(--text-dim);
 }
+.address-text-mine {
+  color: var(--accent);
+}
+.address-text-taken {
+  color: var(--text-dim);
+}
+.address-text-available {
+  color: var(--text);
+}
 </style>
 
 <div class="d-flex justify-between align-center mb-5">
@@ -176,7 +185,7 @@
                             {% else %}<i class="bi bi-circle" style="color:var(--text-dim);font-size:13px;"></i>{% endif %}
                         </div>
                         <div style="flex:1;min-width:0;">
-                            <div class="mono truncate" style="font-size:11px;color:{% if acct.is_mine %}var(--accent){% elif acct.is_taken %}var(--text-dim){% else %}var(--text){% endif %};">{{ acct.address }}</div>
+                            <div class="mono truncate {% if acct.is_mine %}address-text-mine{% elif acct.is_taken %}address-text-taken{% else %}address-text-available{% endif %}" style="font-size:11px;">{{ acct.address }}</div>
                             <div class="mono" style="font-size:10px;margin-top:2px;">
                                 {% if acct.balance is not None %}<span class="text-dim">{{ acct.balance }} ETH &nbsp;·&nbsp;</span>{% endif %}
                                 {% if acct.is_mine %}<span style="color:var(--accent);">YOUR WALLET</span>
