@@ -46,8 +46,9 @@ ROOT_URLCONF = 'ai_powered_blockchain_secure_data_sharing.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # Global templates folder (base.html lives here)
         'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
+        'APP_DIRS': True,   # Scans <app>/templates/ automatically
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -81,13 +82,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-# FIXED: only include static dir if it exists — avoids ImproperlyConfigured crash
 _STATIC_DIR = BASE_DIR / 'static'
 if _STATIC_DIR.exists():
     STATICFILES_DIRS = [_STATIC_DIR]
 
-MEDIA_URL = 'media/'
+MEDIA_URL  = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -97,7 +96,6 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Auth redirects
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/upload/dashboard/'
+LOGIN_URL           = '/accounts/login/'
+LOGIN_REDIRECT_URL  = '/upload/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'

@@ -5,10 +5,10 @@ django>=5.1
 web3
 eth-account
 
-# Encryption (for secure file storage)
+# Encryption
 pycryptodome
 
-# AI - Local Anomaly Detection (no internet needed)
+# AI - Anomaly Detection
 scikit-learn
 numpy
 pandas
@@ -17,7 +17,12 @@ pandas
 django-crispy-forms
 crispy-bootstrap5
 
-# Optional but useful
+# IPFS via Pinata (online storage)
+requests
+
+# Environment variables
 python-dotenv
+
+# Misc
 pillow
 py-solc-x

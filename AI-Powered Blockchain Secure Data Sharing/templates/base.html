@@ -415,7 +415,10 @@
     </div>
 
     <div class="ss-nav-user">
-        <span>{{ user.username }}</span>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+           href="{% url 'profile' %}" style="color:var(--text-dim);">
+            <i class="bi bi-person-circle"></i> {{ user.username }}
+        </a>
         <a class="ss-nav-link ss-logout" href="{% url 'logout' %}">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
