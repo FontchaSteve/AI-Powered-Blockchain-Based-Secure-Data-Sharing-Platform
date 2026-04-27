@@ -7,7 +7,8 @@ This project is a secure web-based data sharing platform that integrates **Block
 The system ensures that all uploaded files are encrypted, access permissions are securely managed, and all activities are transparently logged using blockchain technology.
 ## cd "AI-Powered Blockchain Secure Data Sharing"
 ---
-
+admin page ##http://127.0.0.1:8000/admin/
+wanda12 
 ## 🚀 Features
 
 * 🔐 Secure user authentication system
