@@ -1,21 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}My Files — SecureShare{% endblock %}
-
 {% block content %}
 
 <div class="d-flex justify-between align-center mb-5">
     <div>
         <div class="ss-section-title">// My Secure Files</div>
-        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
-            {{ files|length }} FILE{% if files|length != 1 %}S{% endif %} · AES-256 ENCRYPTED
-        </p>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">{{ files|length }} FILE{% if files|length != 1 %}S{% endif %} · AES-256 ENCRYPTED</p>
     </div>
-    <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary">
-        <i class="bi bi-cloud-upload"></i> Upload New File
-    </a>
+    <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary"><i class="bi bi-cloud-upload"></i> Upload New File</a>
 </div>
 
-<!-- Search & Filter Bar -->
+<!-- Search & Filter -->
 <div class="ss-card mb-4">
     <div class="ss-card-body" style="padding:16px 24px;">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
@@ -27,19 +22,19 @@
                 </div>
             </div>
             <div style="min-width:150px;">
-                <label class="ss-label">Filter by type</label>
+                <label class="ss-label">File type</label>
                 <select id="typeFilter" class="ss-input" onchange="filterFiles()">
                     <option value="">All types</option>
-                    <option value=".pdf">PDF</option>
-                    <option value=".png,.jpg,.jpeg,.gif,.webp">Images</option>
-                    <option value=".mp4,.avi,.mov,.mkv">Videos</option>
-                    <option value=".doc,.docx">Word docs</option>
-                    <option value=".xls,.xlsx">Spreadsheets</option>
-                    <option value=".zip,.rar,.7z">Archives</option>
-                    <option value=".txt,.md">Text</option>
+                    <option value="pdf">PDF</option>
+                    <option value="img">Images</option>
+                    <option value="vid">Videos</option>
+                    <option value="doc">Word docs</option>
+                    <option value="xls">Spreadsheets</option>
+                    <option value="zip">Archives</option>
+                    <option value="txt">Text</option>
                 </select>
             </div>
-            <div style="min-width:150px;">
+            <div style="min-width:140px;">
                 <label class="ss-label">Sort by</label>
                 <select id="sortBy" class="ss-input" onchange="filterFiles()">
                     <option value="newest">Newest first</option>
@@ -49,35 +44,32 @@
                 </select>
             </div>
             <div style="min-width:130px;">
-                <label class="ss-label">Blockchain</label>
-                <select id="blockchainFilter" class="ss-input" onchange="filterFiles()">
+                <label class="ss-label">Storage</label>
+                <select id="storageFilter" class="ss-input" onchange="filterFiles()">
                     <option value="">All</option>
-                    <option value="verified">Verified</option>
-                    <option value="unverified">Not verified</option>
+                    <option value="ipfs">IPFS only</option>
+                    <option value="local">Local only</option>
                 </select>
             </div>
-            <button class="ss-btn ss-btn-sm" onclick="clearFilters()" style="margin-bottom:0;align-self:flex-end;height:40px;">
-                <i class="bi bi-x"></i> Clear
-            </button>
+            <button class="ss-btn ss-btn-sm" onclick="clearFilters()" style="align-self:flex-end;height:40px;"><i class="bi bi-x"></i> Clear</button>
         </div>
     </div>
 </div>
 
-<!-- Results count -->
 <div class="d-flex justify-between align-center mb-3">
     <span class="text-dim mono" id="resultsCount" style="font-size:11px;letter-spacing:1px;"></span>
 </div>
 
 {% if files %}
-<!-- Files Table -->
-<div class="ss-card">
+<div class="ss-card" id="filesCard">
     <div style="overflow-x:auto;">
-        <table class="ss-table" id="filesTable">
+        <table class="ss-table">
             <thead>
                 <tr>
                     <th>File Name</th>
-                    <th>Type</th>
+                    <th>Size</th>
                     <th>Uploaded</th>
+                    <th>Storage</th>
                     <th>Blockchain</th>
                     <th>Actions</th>
                 </tr>
@@ -86,63 +78,57 @@
                 {% for file in files %}
                 <tr class="file-row"
                     data-name="{{ file.filename|lower }}"
-                    data-ext="{{ file.filename|lower }}"
                     data-date="{{ file.upload_date|date:'U' }}"
-                    data-blockchain="{% if file.blockchain_tx_hash %}verified{% else %}unverified{% endif %}">
+                    data-storage="{% if file.ipfs_cid %}ipfs{% else %}local{% endif %}"
+                    data-type="
+                        {% with n=file.filename|lower %}
+                        {% if '.pdf' in n %}pdf
+                        {% elif '.png' in n or '.jpg' in n or '.jpeg' in n or '.gif' in n or '.webp' in n %}img
+                        {% elif '.mp4' in n or '.avi' in n or '.mov' in n or '.mkv' in n %}vid
+                        {% elif '.doc' in n or '.docx' in n %}doc
+                        {% elif '.xls' in n or '.xlsx' in n or '.csv' in n %}xls
+                        {% elif '.zip' in n or '.rar' in n or '.7z' in n %}zip
+                        {% elif '.txt' in n or '.md' in n %}txt
+                        {% else %}other{% endif %}
+                        {% endwith %}
+                    ">
                     <td>
-                        <div class="d-flex align-center gap-2">
-                            <span id="icon-{{ file.id }}" style="font-size:20px;">📄</span>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:20px;">
+                                {% with n=file.filename|lower %}
+                                {% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n or '.jpeg' in n %}🖼️{% elif '.mp4' in n or '.mov' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n or '.rar' in n %}📦{% else %}📄{% endif %}
+                                {% endwith %}
+                            </span>
                             <div>
-                                <div style="font-weight:600;font-size:14px;" class="truncate" style="max-width:250px;">
-                                    {{ file.filename }}
-                                </div>
-                                <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">
-                                    HASH: {{ file.file_hash|slice:":16" }}…
-                                </div>
+                                <div style="font-weight:600;font-size:14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ file.filename }}</div>
+                                <div class="mono text-dim" style="font-size:10px;">{{ file.file_hash|slice:":12" }}…</div>
                             </div>
                         </div>
                     </td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ file.file_size_display }}</td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ file.upload_date|date:"d M Y" }}<br><span style="font-size:10px;">{{ file.upload_date|date:"H:i" }}</span></td>
                     <td>
-                        <span class="ss-badge ss-badge-info file-type-badge" data-filename="{{ file.filename }}">
-                            —
-                        </span>
-                    </td>
-                    <td class="mono text-dim" style="font-size:12px;">
-                        {{ file.upload_date|date:"d M Y" }}<br>
-                        <span style="font-size:10px;">{{ file.upload_date|date:"H:i" }}</span>
-                    </td>
-                    <td>
-                        {% if file.blockchain_tx_hash %}
-                            <div class="d-flex align-center gap-2" style="gap:8px;">
-                                <span class="ss-badge ss-badge-success">
-                                    <i class="bi bi-check-circle"></i> Verified
-                                </span>
-                                <a href="{% url 'blockchain_verify' %}?hash={{ file.file_hash }}"
-                                   class="text-dim mono" style="font-size:10px;text-decoration:none;">
-                                    {{ file.blockchain_tx_hash|slice:":10" }}…
-                                </a>
-                            </div>
+                        {% if file.ipfs_cid %}
+                            <span class="ss-badge ss-badge-info">☁ IPFS</span>
                         {% else %}
-                            <span class="ss-badge ss-badge-gray">Not registered</span>
+                            <span class="ss-badge ss-badge-gray">💾 Local</span>
                         {% endif %}
                     </td>
                     <td>
-                        <div class="d-flex align-center" style="gap:6px;">
-                            <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success">
-                                <i class="bi bi-download"></i>
-                            </a>
-                            <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple">
-                                <i class="bi bi-share"></i>
-                            </a>
-                            <a href="{% url 'blockchain_verify' %}?hash={{ file.file_hash }}" class="ss-btn ss-btn-sm">
-                                <i class="bi bi-link-45deg"></i>
-                            </a>
-                            <form method="POST" action="{% url 'delete_file' file.id %}" style="display:inline;"
-                                  onsubmit="return confirm('Permanently delete \'{{ file.filename }}\'?');">
+                        {% if file.blockchain_tx_hash %}
+                            <span class="ss-badge ss-badge-success"><i class="bi bi-check-circle"></i> Verified</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-gray">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success"><i class="bi bi-download"></i></a>
+                            <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple"><i class="bi bi-share"></i></a>
+                            <a href="{% url 'blockchain_verify' %}?hash={{ file.file_hash }}" class="ss-btn ss-btn-sm"><i class="bi bi-link-45deg"></i></a>
+                            <form method="POST" action="{% url 'delete_file' file.id %}" style="display:inline;" onsubmit="return confirm('Delete \'{{ file.filename }}\'?');">
                                 {% csrf_token %}
-                                <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger"><i class="bi bi-trash"></i></button>
                             </form>
                         </div>
                     </td>
@@ -152,109 +138,58 @@
         </table>
     </div>
 </div>
-
 <div id="emptyState" style="display:none;text-align:center;padding:60px 0;">
     <i class="bi bi-search" style="font-size:48px;color:var(--text-dim);display:block;margin-bottom:16px;"></i>
     <div class="mono text-dim" style="font-size:13px;letter-spacing:2px;">NO FILES MATCH YOUR SEARCH</div>
 </div>
-
 {% else %}
 <div class="ss-card">
     <div class="ss-card-body" style="text-align:center;padding:80px 24px;">
         <i class="bi bi-folder2-open" style="font-size:56px;color:var(--text-dim);display:block;margin-bottom:16px;"></i>
-        <div class="mono" style="font-size:14px;letter-spacing:2px;color:var(--text-dim);margin-bottom:24px;">
-            NO FILES IN YOUR VAULT
-        </div>
-        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary">
-            <i class="bi bi-cloud-upload"></i> Upload Your First File
-        </a>
+        <div class="mono" style="font-size:14px;letter-spacing:2px;color:var(--text-dim);margin-bottom:24px;">NO FILES IN YOUR VAULT</div>
+        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary"><i class="bi bi-cloud-upload"></i> Upload Your First File</a>
     </div>
 </div>
 {% endif %}
 
 <script>
-// File type detection
-const typeMap = {
-    pdf:  { exts: ['.pdf'],                     icon: '📕', label: 'PDF'   },
-    img:  { exts: ['.png','.jpg','.jpeg','.gif','.webp','.svg'], icon: '🖼️', label: 'IMAGE' },
-    vid:  { exts: ['.mp4','.avi','.mov','.mkv','.webm'],         icon: '🎬', label: 'VIDEO' },
-    doc:  { exts: ['.doc','.docx'],             icon: '📝', label: 'DOC'   },
-    xls:  { exts: ['.xls','.xlsx','.csv'],      icon: '📊', label: 'SHEET' },
-    zip:  { exts: ['.zip','.rar','.7z','.tar'], icon: '📦', label: 'ARCHIVE'},
-    txt:  { exts: ['.txt','.md','.log'],        icon: '📄', label: 'TEXT'  },
-    code: { exts: ['.py','.js','.html','.css','.json','.ts','.php'], icon: '💻', label: 'CODE' },
-};
-
-function getType(filename) {
-    const ext = '.' + filename.split('.').pop().toLowerCase();
-    for (const [, v] of Object.entries(typeMap)) {
-        if (v.exts.includes(ext)) return v;
-    }
-    return { exts: [], icon: '📄', label: 'FILE' };
-}
-
-// Apply icons and labels on load
-document.querySelectorAll('.file-row').forEach(row => {
-    const name = row.dataset.name;
-    const t = getType(name);
-    const iconEl = row.querySelector('[id^="icon-"]');
-    const badgeEl = row.querySelector('.file-type-badge');
-    if (iconEl) iconEl.textContent = t.icon;
-    if (badgeEl) badgeEl.textContent = t.label;
-});
-
-// Store original rows for sorting
 const tbody = document.getElementById('filesBody');
-const originalRows = tbody ? Array.from(tbody.querySelectorAll('tr.file-row')) : [];
+const allRows = tbody ? Array.from(tbody.querySelectorAll('tr.file-row')) : [];
 
 function filterFiles() {
     if (!tbody) return;
-    const search   = document.getElementById('searchInput').value.toLowerCase();
-    const typeVal  = document.getElementById('typeFilter').value;
-    const sortVal  = document.getElementById('sortBy').value;
-    const blockVal = document.getElementById('blockchainFilter').value;
+    const search  = document.getElementById('searchInput').value.toLowerCase().trim();
+    const type    = document.getElementById('typeFilter').value;
+    const sort    = document.getElementById('sortBy').value;
+    const storage = document.getElementById('storageFilter').value;
 
-    let rows = [...originalRows];
-
-    // Filter
-    rows = rows.filter(row => {
-        const name      = row.dataset.name;
-        const blockchain= row.dataset.blockchain;
-
-        if (search && !name.includes(search)) return false;
-        if (blockVal && blockchain !== blockVal) return false;
-        if (typeVal) {
-            const exts = typeVal.split(',');
-            const matchesType = exts.some(ext => name.endsWith(ext));
-            if (!matchesType) return false;
-        }
+    let rows = allRows.filter(r => {
+        if (search && !r.dataset.name.includes(search)) return false;
+        if (type && !r.dataset.type.trim().includes(type)) return false;
+        if (storage && r.dataset.storage !== storage) return false;
         return true;
     });
 
-    // Sort
     rows.sort((a, b) => {
-        if (sortVal === 'newest') return b.dataset.date - a.dataset.date;
-        if (sortVal === 'oldest') return a.dataset.date - b.dataset.date;
-        if (sortVal === 'name')   return a.dataset.name.localeCompare(b.dataset.name);
-        if (sortVal === 'name_desc') return b.dataset.name.localeCompare(a.dataset.name);
+        if (sort === 'newest')    return b.dataset.date - a.dataset.date;
+        if (sort === 'oldest')    return a.dataset.date - b.dataset.date;
+        if (sort === 'name')      return a.dataset.name.localeCompare(b.dataset.name);
+        if (sort === 'name_desc') return b.dataset.name.localeCompare(a.dataset.name);
         return 0;
     });
 
-    // Render
     tbody.innerHTML = '';
     rows.forEach(r => tbody.appendChild(r));
 
-    // Show/hide empty state
+    const card  = document.getElementById('filesCard');
     const empty = document.getElementById('emptyState');
-    const table = document.querySelector('.ss-card');
     if (rows.length === 0) {
-        if (table) table.style.display = 'none';
+        if (card) card.style.display = 'none';
         if (empty) empty.style.display = 'block';
     } else {
-        if (table) table.style.display = '';
+        if (card) card.style.display = '';
         if (empty) empty.style.display = 'none';
     }
-
     const count = document.getElementById('resultsCount');
     if (count) count.textContent = `SHOWING ${rows.length} OF {{ files|length }} FILES`;
 }
@@ -263,11 +198,9 @@ function clearFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('typeFilter').value = '';
     document.getElementById('sortBy').value = 'newest';
-    document.getElementById('blockchainFilter').value = '';
+    document.getElementById('storageFilter').value = '';
     filterFiles();
 }
-
-// Init
 filterFiles();
 </script>
 {% endblock %}

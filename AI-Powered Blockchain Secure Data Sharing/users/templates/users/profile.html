@@ -1,99 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Profile & Wallet — SecureShare{% endblock %}
-
+{% block title %}Profile — SecureShare{% endblock %}
 {% block content %}
-<style>
-.ganache-online {
-  background: rgba(46, 213, 115, 0.08);
-  border: 1px solid rgba(46, 213, 115, 0.2);
-}
-.ganache-offline {
-  background: rgba(255, 71, 87, 0.08);
-  border: 1px solid rgba(255, 71, 87, 0.2);
-}
-.ipfs-enabled {
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-}
-.ipfs-disabled {
-  background: rgba(74, 122, 153, 0.08);
-  border: 1px solid var(--border);
-}
-.account-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  margin-bottom: 6px;
-}
-.account-mine {
-  border: 1px solid rgba(0, 212, 255, 0.5);
-  background: rgba(0, 212, 255, 0.06);
-  cursor: default;
-}
-.account-taken {
-  border: 1px solid rgba(255, 71, 87, 0.2);
-  background: rgba(255, 71, 87, 0.04);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.account-available {
-  border: 1px solid var(--border);
-  cursor: pointer;
-}
-.wallet-display {
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
-  padding: 14px;
-  margin-bottom: 20px;
-}
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.status-dot-online {
-  background: var(--success);
-}
-.status-dot-offline {
-  background: var(--danger);
-}
-.status-dot-enabled {
-  background: var(--accent);
-}
-.status-dot-disabled {
-  background: var(--text-dim);
-}
-.status-text-online {
-  color: var(--success);
-}
-.status-text-offline {
-  color: var(--danger);
-}
-.status-text-enabled {
-  color: var(--accent);
-}
-.status-text-disabled {
-  color: var(--text-dim);
-}
-.address-text-mine {
-  color: var(--accent);
-}
-.address-text-taken {
-  color: var(--text-dim);
-}
-.address-text-available {
-  color: var(--text);
-}
-</style>
 
 <div class="d-flex justify-between align-center mb-5">
     <div>
-        <div class="ss-section-title">// Profile & Wallet</div>
-        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">ACCOUNT SETTINGS · BLOCKCHAIN WALLET · SYSTEM STATUS</p>
+        <div class="ss-section-title">// My Profile</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">ACCOUNT SETTINGS · SECURITY · BLOCKCHAIN IDENTITY</p>
     </div>
 </div>
 
@@ -105,15 +17,15 @@
     <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-box-arrow-in-right"></i></span><div class="ss-stat-value" style="color:var(--warning);">{{ total_logins }}</div><div class="ss-stat-label">Total Logins</div></div>
 </div>
 
-<!-- Status bar -->
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;" class="{% if ganache_connected %}ganache-online{% else %}ganache-offline{% endif %}">
-        <span class="status-dot {% if ganache_connected %}status-dot-online{% else %}status-dot-offline{% endif %}"></span>
-        <span class="mono {% if ganache_connected %}status-text-online{% else %}status-text-offline{% endif %}" style="font-size:11px;">GANACHE {% if ganache_connected %}ONLINE{% else %}OFFLINE — start Ganache first{% endif %}</span>
+<!-- System status -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;{% if ganache_connected %}background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.2);{% else %}background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);{% endif %}">
+        <span style="width:7px;height:7px;border-radius:50%;background:{% if ganache_connected %}var(--success){% else %}var(--danger){% endif %};"></span>
+        <span class="mono" style="font-size:11px;color:{% if ganache_connected %}var(--success){% else %}var(--danger){% endif %};">GANACHE {% if ganache_connected %}ONLINE{% else %}OFFLINE{% endif %}</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;" class="{% if ipfs_enabled %}ipfs-enabled{% else %}ipfs-disabled{% endif %}">
-        <span class="status-dot {% if ipfs_enabled %}status-dot-enabled{% else %}status-dot-disabled{% endif %}"></span>
-        <span class="mono {% if ipfs_enabled %}status-text-enabled{% else %}status-text-disabled{% endif %}" style="font-size:11px;">PINATA/IPFS {% if ipfs_enabled %}ENABLED{% else %}NOT CONFIGURED — add PINATA_API_KEY to .env{% endif %}</span>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;{% if ipfs_enabled %}background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);{% else %}background:rgba(74,122,153,0.08);border:1px solid var(--border);{% endif %}">
+        <span style="width:7px;height:7px;border-radius:50%;background:{% if ipfs_enabled %}var(--accent){% else %}var(--text-dim){% endif %};"></span>
+        <span class="mono" style="font-size:11px;color:{% if ipfs_enabled %}var(--accent){% else %}var(--text-dim){% endif %};">IPFS/PINATA {% if ipfs_enabled %}ENABLED{% else %}NOT CONFIGURED{% endif %}</span>
     </div>
 </div>
 
@@ -126,7 +38,10 @@
             <div class="ss-card-body">
                 <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
                     <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;color:var(--accent);flex-shrink:0;">{{ user.username|slice:":2"|upper }}</div>
-                    <div><div style="font-size:18px;font-weight:700;">{{ user.username }}</div><div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">JOINED {{ user.date_joined|date:"d M Y" }}</div></div>
+                    <div>
+                        <div style="font-size:18px;font-weight:700;">{{ user.username }}</div>
+                        <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">MEMBER SINCE {{ user.date_joined|date:"d M Y" }}</div>
+                    </div>
                 </div>
                 <form method="POST">
                     {% csrf_token %}<input type="hidden" name="action" value="update_email">
@@ -136,94 +51,78 @@
                 </form>
             </div>
         </div>
+
         <div class="ss-card">
             <div class="ss-card-header"><i class="bi bi-key"></i> Change Password</div>
             <div class="ss-card-body">
                 <form method="POST">
                     {% csrf_token %}<input type="hidden" name="action" value="change_password">
-                    <label class="ss-label">Current Password</label><input type="password" name="old_password" class="ss-input" required style="margin-bottom:12px;">
-                    <label class="ss-label">New Password</label><input type="password" name="new_password1" class="ss-input" required style="margin-bottom:12px;">
-                    <label class="ss-label">Confirm New Password</label><input type="password" name="new_password2" class="ss-input" required style="margin-bottom:16px;">
+                    <label class="ss-label">Current Password</label>
+                    <input type="password" name="old_password" class="ss-input" required style="margin-bottom:12px;">
+                    <label class="ss-label">New Password</label>
+                    <input type="password" name="new_password1" class="ss-input" required style="margin-bottom:12px;">
+                    <label class="ss-label">Confirm New Password</label>
+                    <input type="password" name="new_password2" class="ss-input" required style="margin-bottom:16px;">
                     <button type="submit" class="ss-btn w-100" style="border-color:rgba(124,58,237,0.4);color:#a78bfa;"><i class="bi bi-lock"></i> Change Password</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Wallet -->
+    <!-- Blockchain Wallet (read-only — auto assigned) -->
     <div style="display:flex;flex-direction:column;gap:24px;">
         <div class="ss-card">
             <div class="ss-card-header">
                 <i class="bi bi-wallet2"></i> Blockchain Wallet
-                {% if user.wallet_address %}<span class="ss-badge ss-badge-success" style="margin-left:8px;">CONNECTED</span>{% if wallet_balance is not None %}<span class="mono text-accent" style="margin-left:auto;font-size:11px;">{{ wallet_balance }} ETH</span>{% endif %}
-                {% else %}<span class="ss-badge ss-badge-warning" style="margin-left:8px;">NOT SET</span>{% endif %}
+                {% if user.wallet_address %}<span class="ss-badge ss-badge-success" style="margin-left:8px;">AUTO-ASSIGNED</span>
+                {% else %}<span class="ss-badge ss-badge-warning" style="margin-left:8px;">NOT ASSIGNED</span>{% endif %}
             </div>
             <div class="ss-card-body">
                 {% if user.wallet_address %}
-                <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:14px;margin-bottom:20px;">
-                    <div class="mono text-dim" style="font-size:10px;letter-spacing:2px;margin-bottom:6px;">YOUR ACTIVE WALLET</div>
-                    <div class="mono text-accent" style="font-size:12px;word-break:break-all;">{{ user.wallet_address }}</div>
-                </div>
-                {% endif %}
-                <form method="POST" id="walletForm">
-                    {% csrf_token %}<input type="hidden" name="action" value="update_wallet">
-                    <label class="ss-label">Wallet Address</label>
-                    <input type="text" name="wallet_address" id="walletInput" class="ss-input" value="{{ user.wallet_address|default:'' }}" placeholder="Click an account below or paste 0x..." style="font-family:var(--mono);margin-bottom:6px;">
-                    <div class="mono text-dim" style="font-size:10px;margin-bottom:16px;">42 chars starting with 0x · leave blank to disconnect</div>
-                    <button type="submit" class="ss-btn ss-btn-primary w-100" style="margin-bottom:20px;"><i class="bi bi-wallet2"></i> {% if user.wallet_address %}Update{% else %}Connect{% endif %} Wallet</button>
-                </form>
-
-                <!-- Account picker with collision detection -->
-                {% if account_info %}
-                <div style="border-top:1px solid var(--border);padding-top:16px;">
-                    <div class="mono text-dim" style="font-size:10px;letter-spacing:2px;margin-bottom:12px;">GANACHE ACCOUNTS — CLICK TO SELECT</div>
-                    {% for acct in account_info %}
-                    <div class="account-item {% if acct.is_mine %}account-mine{% elif acct.is_taken %}account-taken{% else %}account-available{% endif %}" {% if not acct.is_taken %}onclick="selectWallet('{{ acct.address }}')"{% endif %}>
-                        <div style="width:20px;text-align:center;flex-shrink:0;">
-                            {% if acct.is_mine %}<i class="bi bi-check-circle-fill" style="color:var(--accent);font-size:14px;"></i>
-                            {% elif acct.is_taken %}<i class="bi bi-lock-fill" style="color:var(--danger);font-size:13px;"></i>
-                            {% else %}<i class="bi bi-circle" style="color:var(--text-dim);font-size:13px;"></i>{% endif %}
-                        </div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="mono truncate {% if acct.is_mine %}address-text-mine{% elif acct.is_taken %}address-text-taken{% else %}address-text-available{% endif %}" style="font-size:11px;">{{ acct.address }}</div>
-                            <div class="mono" style="font-size:10px;margin-top:2px;">
-                                {% if acct.balance is not None %}<span class="text-dim">{{ acct.balance }} ETH &nbsp;·&nbsp;</span>{% endif %}
-                                {% if acct.is_mine %}<span style="color:var(--accent);">YOUR WALLET</span>
-                                {% elif acct.is_taken %}<span style="color:var(--danger);">TAKEN BY {{ acct.taken_by|upper }}</span>
-                                {% else %}<span style="color:var(--success);">AVAILABLE</span>{% endif %}
-                            </div>
-                        </div>
-                        {% if acct.is_mine %}<span class="ss-badge ss-badge-info" style="flex-shrink:0;">ACTIVE</span>
-                        {% elif acct.is_taken %}<span class="ss-badge ss-badge-danger" style="flex-shrink:0;">IN USE</span>
-                        {% else %}<span class="ss-badge ss-badge-gray" style="flex-shrink:0;font-size:9px;">SELECT</span>{% endif %}
+                <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:20px;margin-bottom:20px;">
+                    <div class="mono text-dim" style="font-size:10px;letter-spacing:2px;margin-bottom:8px;">YOUR WALLET ADDRESS</div>
+                    <div class="mono text-accent" style="font-size:13px;word-break:break-all;line-height:1.8;">{{ user.wallet_address }}</div>
+                    {% if wallet_balance is not None %}
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.1);">
+                        <span class="ss-badge ss-badge-info">{{ wallet_balance }} ETH</span>
+                        <span class="mono text-dim" style="font-size:10px;margin-left:8px;">Ganache test network</span>
                     </div>
-                    {% endfor %}
-                    <div class="mono text-dim" style="font-size:10px;margin-top:10px;">🔴 Red lock = taken · 🟢 Green = available · Click → Connect Wallet to save</div>
+                    {% endif %}
                 </div>
-                {% elif not ganache_connected %}
-                <div style="text-align:center;padding:20px 0;"><i class="bi bi-plug" style="font-size:28px;color:var(--text-dim);display:block;margin-bottom:8px;"></i><div class="mono text-dim" style="font-size:11px;letter-spacing:2px;">START GANACHE TO SEE ACCOUNTS</div></div>
+                <div style="background:rgba(46,213,115,0.05);border:1px solid rgba(46,213,115,0.15);border-radius:6px;padding:14px;">
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <i class="bi bi-check-circle-fill" style="color:var(--success);margin-top:2px;flex-shrink:0;"></i>
+                        <div class="text-dim" style="font-size:13px;">This wallet was automatically assigned to your account. Every file you upload is signed with this address on the blockchain — proving you are the owner.</div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:40px 20px;">
+                    <i class="bi bi-wallet2" style="font-size:40px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+                    <div class="mono text-dim" style="font-size:11px;letter-spacing:2px;margin-bottom:8px;">NO WALLET ASSIGNED</div>
+                    <div class="text-dim" style="font-size:13px;">Start Ganache then log out and back in — a wallet will be assigned automatically.</div>
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <div class="ss-card">
-            <div class="ss-card-header"><i class="bi bi-info-circle"></i> Why Connect a Wallet?</div>
-            <div class="ss-card-body" style="display:flex;flex-direction:column;gap:14px;">
-                <div style="display:flex;gap:12px;"><span style="font-size:18px;flex-shrink:0;">⛓</span><div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:3px;">ON-CHAIN OWNERSHIP</div><div class="text-dim" style="font-size:13px;">Without a wallet, all files look owned by the same address on-chain. Your wallet proves <em>you</em> uploaded each file.</div></div></div>
-                <div style="display:flex;gap:12px;"><span style="font-size:18px;flex-shrink:0;">🔐</span><div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:3px;">BLOCKCHAIN FILE SHARING</div><div class="text-dim" style="font-size:13px;">When both users have wallets, sharing calls <code style="color:var(--accent);">grantAccess()</code> on the smart contract — real blockchain permission.</div></div></div>
-                <div style="display:flex;gap:12px;"><span style="font-size:18px;flex-shrink:0;">⚠</span><div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--warning);margin-bottom:3px;">ONE ACCOUNT PER USER</div><div class="text-dim" style="font-size:13px;">Each user must pick a different Ganache account. If two users share the same wallet, blockchain records are mixed up and transactions can fail.</div></div></div>
+            <div class="ss-card-header"><i class="bi bi-info-circle"></i> How It Works</div>
+            <div class="ss-card-body" style="display:flex;flex-direction:column;gap:16px;">
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">🔐</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">AUTO WALLET ASSIGNMENT</div><div class="text-dim" style="font-size:13px;">When you registered, the system automatically assigned you a unique Ganache account. No two users share the same wallet.</div></div>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">⛓</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">BLOCKCHAIN OWNERSHIP</div><div class="text-dim" style="font-size:13px;">Every file you upload is registered on the blockchain under your wallet address — cryptographic proof that you own it.</div></div>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">☁</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">IPFS STORAGE</div><div class="text-dim" style="font-size:13px;">Your encrypted files are stored on IPFS — a global decentralized network. They remain accessible even if this server goes offline.</div></div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-function selectWallet(address) {
-    const input = document.getElementById('walletInput');
-    input.value = address;
-    input.style.borderColor = 'var(--accent)';
-    input.style.boxShadow = '0 0 0 3px rgba(0,212,255,0.15)';
-    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-</script>
+</div>
 {% endblock %}

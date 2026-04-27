@@ -1,62 +1,32 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard — SecureShare{% endblock %}
-
 {% block content %}
 
-<!-- Welcome -->
 <div style="margin-bottom:32px;">
     <div class="ss-section-title">// Command Center</div>
     <div style="display:flex;align-items:baseline;gap:12px;">
-        <h1 style="font-family:var(--mono);font-size:28px;color:var(--accent);text-shadow:0 0 20px rgba(0,212,255,0.3);">
-            {{ user.username|upper }}
-        </h1>
+        <h1 style="font-family:var(--mono);font-size:28px;color:var(--accent);text-shadow:0 0 20px rgba(0,212,255,0.3);">{{ user.username|upper }}</h1>
         <span class="text-dim mono" style="font-size:12px;letter-spacing:2px;">SECURE VAULT ACTIVE</span>
     </div>
 </div>
 
 <!-- Stats -->
 <div class="ss-grid ss-grid-4 mb-5">
-    <div class="ss-stat">
-        <span class="ss-stat-icon text-accent"><i class="bi bi-file-earmark-lock"></i></span>
-        <div class="ss-stat-value">{{ total_files }}</div>
-        <div class="ss-stat-label">Encrypted Files</div>
-    </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:var(--accent3);"><i class="bi bi-people"></i></span>
-        <div class="ss-stat-value" style="color:var(--accent3);">{{ shared_with_me }}</div>
-        <div class="ss-stat-label">Shared With Me</div>
-    </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-shield-check"></i></span>
-        <div class="ss-stat-value" style="color:var(--success);">100%</div>
-        <div class="ss-stat-label">Blockchain Secured</div>
-    </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-robot"></i></span>
-        <div class="ss-stat-value" style="color:var(--warning);font-size:22px;padding-top:6px;">ACTIVE</div>
-        <div class="ss-stat-label">AI Monitor</div>
-    </div>
+    <div class="ss-stat"><span class="ss-stat-icon text-accent"><i class="bi bi-file-earmark-lock"></i></span><div class="ss-stat-value">{{ total_files }}</div><div class="ss-stat-label">Encrypted Files</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--accent3);"><i class="bi bi-people"></i></span><div class="ss-stat-value" style="color:var(--accent3);">{{ shared_with_me }}</div><div class="ss-stat-label">Shared With Me</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-shield-check"></i></span><div class="ss-stat-value" style="color:var(--success);">{% if ipfs_enabled %}IPFS{% else %}LOCAL{% endif %}</div><div class="ss-stat-label">Storage Mode</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-robot"></i></span><div class="ss-stat-value" style="color:var(--warning);font-size:22px;padding-top:6px;">ACTIVE</div><div class="ss-stat-label">AI Monitor</div></div>
 </div>
 
 <!-- Quick Actions -->
 <div class="mb-5">
     <div class="ss-section-title">// Quick Actions</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
-        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary" style="font-size:13px;padding:12px 24px;">
-            <i class="bi bi-cloud-upload"></i> Upload File
-        </a>
-        <a href="{% url 'my_files' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
-            <i class="bi bi-folder2"></i> My Files
-        </a>
-        <a href="{% url 'shared_with_me' %}" class="ss-btn ss-btn-purple" style="font-size:13px;padding:12px 24px;">
-            <i class="bi bi-people"></i> Shared With Me
-        </a>
-        <a href="{% url 'blockchain_verify' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
-            <i class="bi bi-link-45deg"></i> Blockchain Verify
-        </a>
-        <a href="{% url 'ai_monitor' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;">
-            <i class="bi bi-robot"></i> AI Monitor
-        </a>
+        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary" style="font-size:13px;padding:12px 24px;"><i class="bi bi-cloud-upload"></i> Upload File</a>
+        <a href="{% url 'my_files' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;"><i class="bi bi-folder2"></i> My Files</a>
+        <a href="{% url 'shared_with_me' %}" class="ss-btn ss-btn-purple" style="font-size:13px;padding:12px 24px;"><i class="bi bi-people"></i> Shared With Me</a>
+        <a href="{% url 'blockchain_verify' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;"><i class="bi bi-link-45deg"></i> Blockchain Verify</a>
+        <a href="{% url 'ai_monitor' %}" class="ss-btn" style="font-size:13px;padding:12px 24px;"><i class="bi bi-robot"></i> AI Monitor</a>
     </div>
 </div>
 
@@ -71,26 +41,27 @@
         {% if recent_files %}
         <div>
             {% for file in recent_files %}
-            <div style="
-                display:flex;align-items:center;gap:12px;
-                padding:12px 20px;
-                border-bottom:1px solid rgba(15,45,70,0.5);
-                transition:background 0.15s;
-            " onmouseover="this.style.background='rgba(0,212,255,0.03)'" onmouseout="this.style.background=''">
-                <span style="font-size:22px;">📄</span>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(15,45,70,0.5);">
+                <span style="font-size:22px;">
+                    {% with name=file.filename|lower %}
+                    {% if '.pdf' in name %}📕{% elif '.png' in name or '.jpg' in name or '.jpeg' in name %}🖼️{% elif '.mp4' in name or '.mov' in name or '.avi' in name %}🎬{% elif '.doc' in name %}📝{% elif '.xls' in name %}📊{% elif '.zip' in name or '.rar' in name %}📦{% else %}📄{% endif %}
+                    {% endwith %}
+                </span>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:13px;" class="truncate">{{ file.filename }}</div>
-                    <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">
-                        {{ file.upload_date|date:"d M Y · H:i" }}
+                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ file.filename }}</div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                        <span class="mono text-dim" style="font-size:10px;">{{ file.upload_date|date:"d M Y · H:i" }}</span>
+                        {% if file.ipfs_cid %}
+                            <span class="ss-badge ss-badge-info" style="font-size:8px;padding:2px 6px;">☁ IPFS</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-gray" style="font-size:8px;padding:2px 6px;">💾 LOCAL</span>
+                        {% endif %}
+                        {% if file.file_size %}<span class="mono text-dim" style="font-size:10px;">{{ file.file_size_display }}</span>{% endif %}
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;">
-                    <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success">
-                        <i class="bi bi-download"></i>
-                    </a>
-                    <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple">
-                        <i class="bi bi-share"></i>
-                    </a>
+                    <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success"><i class="bi bi-download"></i></a>
+                    <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple"><i class="bi bi-share"></i></a>
                 </div>
             </div>
             {% endfor %}
@@ -113,11 +84,7 @@
         {% if recent_activity %}
         <div>
             {% for log in recent_activity %}
-            <div style="
-                display:flex;align-items:center;gap:12px;
-                padding:10px 20px;
-                border-bottom:1px solid rgba(15,45,70,0.5);
-            ">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid rgba(15,45,70,0.5);">
                 <div style="width:32px;text-align:center;">
                     {% if log.action == 'upload' %}<i class="bi bi-upload" style="color:var(--accent);"></i>
                     {% elif log.action == 'download' %}<i class="bi bi-download" style="color:var(--success);"></i>
@@ -130,11 +97,8 @@
                     <div style="font-size:13px;font-weight:600;">{{ log.action|upper }}</div>
                     <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">{{ log.timestamp|date:"d M · H:i" }}</div>
                 </div>
-                {% if log.success %}
-                    <span class="ss-badge ss-badge-success">OK</span>
-                {% else %}
-                    <span class="ss-badge ss-badge-danger">FAIL</span>
-                {% endif %}
+                {% if log.success %}<span class="ss-badge ss-badge-success">OK</span>
+                {% else %}<span class="ss-badge ss-badge-danger">FAIL</span>{% endif %}
             </div>
             {% endfor %}
         </div>
@@ -148,23 +112,16 @@
 
 </div>
 
-<!-- System status bar -->
-<div style="
-    margin-top:32px;padding:12px 20px;
-    background:var(--surface);border:1px solid var(--border);border-radius:8px;
-    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-">
+<!-- Status bar -->
+<div style="margin-top:32px;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:6px;">
         <span style="width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse 2s infinite;display:inline-block;"></span>
         <span class="mono text-dim" style="font-size:10px;letter-spacing:2px;">SYSTEM ONLINE</span>
     </div>
-    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  AES-256 ENCRYPTION</span>
-    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  BLOCKCHAIN: GANACHE LOCAL</span>
-    <span class="mono text-dim" style="font-size:10px;letter-spacing:1px;">·  AI MONITOR: ISOLATION FOREST</span>
+    <span class="mono text-dim" style="font-size:10px;">· AES-256 ENCRYPTION</span>
+    <span class="mono text-dim" style="font-size:10px;">· BLOCKCHAIN: GANACHE LOCAL</span>
+    <span class="mono text-dim" style="font-size:10px;">· STORAGE: {% if ipfs_enabled %}IPFS / PINATA ONLINE{% else %}LOCAL DISK{% endif %}</span>
+    <span class="mono text-dim" style="font-size:10px;">· AI MONITOR: ACTIVE</span>
 </div>
-
-<style>
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-</style>
-
+<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}</style>
 {% endblock %}
