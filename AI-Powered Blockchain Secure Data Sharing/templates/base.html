@@ -412,6 +412,12 @@
            href="{% url 'ai_monitor' %}">
             <i class="bi bi-robot"></i> AI Monitor
         </a>
+        {% if user.is_superuser %}
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+           href="{% url 'admin_dashboard' %}" style="color:var(--warning);">
+            <i class="bi bi-shield-lock"></i> Admin
+        </a>
+        {% endif %}
     </div>
 
     <div class="ss-nav-user">

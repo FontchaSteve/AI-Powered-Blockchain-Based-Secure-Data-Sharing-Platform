@@ -5,395 +5,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register — SecureShare</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#050a0f;--surface:#0b1622;--border:#0f2d46;
+            --accent:#00d4ff;--accent2:#0077ff;--accent3:#7c3aed;
+            --danger:#ff4757;--success:#2ed573;--text:#c8dde8;--text-dim:#4a7a99;
+            --mono:'Share Tech Mono',monospace;--sans:'Rajdhani',sans-serif;
+        }
+        html,body{height:100%;overflow:hidden}
+        body{
+            background:var(--bg);color:var(--text);font-family:var(--sans);
+            display:flex;align-items:center;justify-content:center;
+            position:relative;
+        }
+        body::before{
+            content:'';position:fixed;inset:0;
+            background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);
+            background-size:40px 40px;animation:gridScroll 25s linear infinite;pointer-events:none;
+        }
+        @keyframes gridScroll{to{background-position:0 40px}}
+        .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.12;animation:orbFloat 8s ease-in-out infinite;}
+        .orb-1{width:300px;height:300px;background:var(--accent3);top:-80px;right:-80px;}
+        .orb-2{width:250px;height:250px;background:var(--accent);bottom:-60px;left:-60px;animation-delay:-4s;}
+        @keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(15px,-15px)}}
 
-        :root {
-            --bg:        #050a0f;
-            --surface:   #0b1622;
-            --border:    #0f2d46;
-            --accent:    #00d4ff;
-            --accent2:   #0077ff;
-            --accent3:   #7c3aed;
-            --danger:    #ff4757;
-            --success:   #2ed573;
-            --text:      #c8dde8;
-            --text-dim:  #4a7a99;
-            --mono:      'Share Tech Mono', monospace;
-            --sans:      'Rajdhani', sans-serif;
+        .wrapper{
+            position:relative;z-index:10;width:100%;max-width:460px;
+            padding:20px;animation:fadeUp 0.5s ease both;
+            max-height:100vh;overflow-y:auto;
         }
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-        body {
-            background: var(--bg);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--sans);
-            color: var(--text);
-            overflow: hidden;
-            position: relative;
-            padding: 24px 0;
+        .logo{text-align:center;margin-bottom:20px;}
+        .logo-icon{
+            display:inline-flex;align-items:center;justify-content:center;
+            width:52px;height:52px;border:1px solid var(--accent3);border-radius:14px;
+            margin-bottom:10px;background:rgba(124,58,237,0.08);
+            box-shadow:0 0 24px rgba(124,58,237,0.2);
         }
+        .logo-icon svg{width:26px;height:26px;}
+        .logo-title{font-family:var(--mono);font-size:20px;letter-spacing:3px;color:var(--accent);text-shadow:0 0 16px rgba(0,212,255,0.4);}
+        .logo-sub{font-family:var(--mono);font-size:10px;letter-spacing:4px;color:var(--text-dim);margin-top:3px;}
 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            animation: gridMove 20s linear infinite;
+        .card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:12px;padding:28px 28px;position:relative;overflow:hidden;
         }
+        .card::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:1px;
+            background:linear-gradient(90deg,transparent,var(--accent3),var(--accent),transparent);opacity:0.7;
+        }
+        .card-title{
+            font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--text-dim);
+            text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:10px;
+        }
+        .card-title::after{content:'';flex:1;height:1px;background:var(--border);}
 
-        @keyframes gridMove {
-            0%   { transform: translateY(0); }
-            100% { transform: translateY(40px); }
-        }
+        .alert{padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:16px;}
+        .alert-success{background:rgba(46,213,115,0.1);border:1px solid rgba(46,213,115,0.3);color:var(--success);}
+        .alert-error,.alert-danger{background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:var(--danger);}
 
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.12;
-            animation: orbFloat 8s ease-in-out infinite;
-        }
-        .orb-1 { width: 350px; height: 350px; background: var(--accent3); top: -80px; right: -80px; }
-        .orb-2 { width: 300px; height: 300px; background: var(--accent); bottom: -60px; left: -60px; animation-delay: -4s; }
-
-        @keyframes orbFloat {
-            0%, 100% { transform: translate(0,0); }
-            50%       { transform: translate(15px, -15px); }
-        }
-
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent3), var(--accent), transparent);
-            animation: scan 5s ease-in-out infinite;
-            opacity: 0.5;
-        }
-        @keyframes scan {
-            0%   { top: 0; opacity: 0; }
-            10%  { opacity: 0.5; }
-            90%  { opacity: 0.5; }
-            100% { top: 100vh; opacity: 0; }
-        }
-
-        .wrapper {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            max-width: 460px;
-            padding: 24px;
-            animation: fadeUp 0.6s ease both;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-
-        .logo-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 64px; height: 64px;
-            border: 1px solid var(--accent3);
-            border-radius: 16px;
-            margin-bottom: 16px;
-            background: rgba(124,58,237,0.08);
-            box-shadow: 0 0 30px rgba(124,58,237,0.2), inset 0 0 20px rgba(124,58,237,0.05);
-        }
-
-        .logo-icon svg { width: 32px; height: 32px; }
-
-        .logo-title {
-            font-family: var(--mono);
-            font-size: 22px;
-            letter-spacing: 3px;
-            color: var(--accent);
-            text-shadow: 0 0 20px rgba(0,212,255,0.4);
-        }
-
-        .logo-sub {
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 4px;
-            color: var(--text-dim);
-            margin-top: 4px;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 36px 32px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent3), var(--accent), transparent);
-            opacity: 0.7;
-        }
-
-        .card-title {
-            font-family: var(--mono);
-            font-size: 13px;
-            letter-spacing: 3px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .card-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        /* Step indicator */
-        .steps {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 28px;
-        }
-        .step {
-            flex: 1;
-            height: 3px;
-            border-radius: 2px;
-            background: var(--border);
-        }
-        .step.active { background: linear-gradient(90deg, var(--accent3), var(--accent)); }
-
-        .alert {
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            margin-bottom: 16px;
-            font-family: var(--mono);
-            letter-spacing: 0.5px;
-        }
-        .alert-error, .alert-danger {
-            background: rgba(255,71,87,0.1);
-            border: 1px solid rgba(255,71,87,0.3);
-            color: #ff6b7a;
-        }
-        .alert-success {
-            background: rgba(46,213,115,0.1);
-            border: 1px solid rgba(46,213,115,0.3);
-            color: var(--success);
-        }
-
-        /* Django form styles */
-        .django-form p { margin-bottom: 18px; }
-
-        .django-form label {
-            display: block;
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin-bottom: 7px;
-        }
-
+        /* Django form override */
+        .django-form p{margin-bottom:14px;}
+        .django-form label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px;}
         .django-form input[type="text"],
         .django-form input[type="email"],
-        .django-form input[type="password"] {
-            width: 100%;
-            background: rgba(124,58,237,0.04);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 11px 16px;
-            font-family: var(--mono);
-            font-size: 14px;
-            color: var(--text);
-            outline: none;
-            transition: all 0.2s;
+        .django-form input[type="password"]{
+            width:100%;background:rgba(124,58,237,0.04);border:1px solid var(--border);
+            border-radius:6px;padding:9px 14px;font-family:var(--mono);font-size:13px;
+            color:var(--text);outline:none;transition:all 0.2s;
+        }
+        .django-form input:focus{border-color:var(--accent3);background:rgba(124,58,237,0.08);box-shadow:0 0 0 3px rgba(124,58,237,0.12);}
+        .django-form input::placeholder{color:var(--text-dim);}
+        .django-form ul.errorlist{list-style:none;margin:4px 0 0;padding:0;}
+        .django-form ul.errorlist li{font-family:var(--mono);font-size:10px;color:var(--danger);}
+        .django-form span.helptext,.django-form .helptext{
+            display:block;font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:3px;line-height:1.5;
         }
 
-        .django-form input:focus {
-            border-color: var(--accent3);
-            background: rgba(124,58,237,0.08);
-            box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+        .btn-submit{
+            width:100%;padding:12px;
+            background:linear-gradient(135deg,var(--accent3),var(--accent2),var(--accent));
+            border:none;border-radius:6px;font-family:var(--mono);font-size:12px;
+            letter-spacing:3px;text-transform:uppercase;color:#fff;font-weight:bold;
+            cursor:pointer;transition:all 0.3s;margin-top:6px;
         }
+        .btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,0.3);}
 
-        .django-form input::placeholder { color: var(--text-dim); }
+        .card-footer{margin-top:16px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text-dim);}
+        .card-footer a{color:var(--accent);text-decoration:none;}
+        .card-footer a:hover{opacity:0.7;}
 
-        .django-form ul.errorlist {
-            list-style: none;
-            margin: 6px 0 0;
-            padding: 0;
-        }
-
-        .django-form ul.errorlist li {
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--danger);
-            letter-spacing: 0.5px;
-        }
-
-        .django-form span.helptext,
-        .django-form .helptext {
-            display: block;
-            font-family: var(--mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            margin-top: 5px;
-            line-height: 1.6;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--accent3), var(--accent2), var(--accent));
-            border: none;
-            border-radius: 6px;
-            font-family: var(--mono);
-            font-size: 13px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-            margin-top: 8px;
-        }
-
-        .btn-submit::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,58,237,0.35); }
-        .btn-submit:hover::before { left: 100%; }
-        .btn-submit:active { transform: translateY(0); }
-
-        /* Features strip */
-        .features {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-
-        .feature {
-            flex: 1;
-            text-align: center;
-            font-family: var(--mono);
-            font-size: 9px;
-            letter-spacing: 1px;
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        .feature-icon {
-            font-size: 18px;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .card-footer {
-            margin-top: 20px;
-            text-align: center;
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-
-        .card-footer a {
-            color: var(--accent);
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-        .card-footer a:hover { opacity: 0.7; }
+        .features{display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+        .feature{flex:1;text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--text-dim);line-height:1.6;}
+        .feature-icon{font-size:16px;display:block;margin-bottom:3px;}
     </style>
 </head>
 <body>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
 
-    <div class="wrapper">
-        <div class="logo">
-            <div class="logo-icon">
-                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="16" cy="10" r="4" stroke="#7c3aed" stroke-width="1.5"/>
-                    <path d="M8 26c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M22 6l2 2-2 2M26 8h-4" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="26" cy="22" r="4" stroke="#00d4ff" stroke-width="1.2"/>
-                    <path d="M24.5 22l1 1 2-2" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-            <div class="logo-title">SECURESHARE</div>
-            <div class="logo-sub">Create your encrypted vault</div>
+<div class="wrapper">
+    <div class="logo">
+        <div class="logo-icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="10" r="4" stroke="#7c3aed" stroke-width="1.5"/>
+                <path d="M8 26c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M22 6l2 2-2 2M26 8h-4" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="26" cy="22" r="4" stroke="#00d4ff" stroke-width="1.2"/>
+                <path d="M24.5 22l1 1 2-2" stroke="#00d4ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="logo-title">SECURESHARE</div>
+        <div class="logo-sub">Create your encrypted vault</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">// New Identity</div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" class="django-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn-submit">+ Initialize Account</button>
+        </form>
+
+        <div class="card-footer" style="margin-top:14px;">
+            Already have a vault? <a href="{% url 'login' %}">Access it here</a>
         </div>
 
-        <div class="card">
-            <div class="card-title">// New Identity</div>
-
-            <div class="steps">
-                <div class="step active"></div>
-                <div class="step active"></div>
-                <div class="step active"></div>
-                <div class="step"></div>
-            </div>
-
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <form method="POST" class="django-form">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn-submit">+ Initialize Account</button>
-            </form>
-
-            <div class="card-footer" style="margin-top: 16px;">
-                Already have a vault? <a href="{% url 'login' %}">Access it here</a>
-            </div>
-
-            <div class="features">
-                <div class="feature">
-                    <span class="feature-icon">🔒</span>
-                    AES-256<br>ENCRYPTION
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">⛓</span>
-                    BLOCKCHAIN<br>VERIFIED
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">🤖</span>
-                    AI THREAT<br>DETECTION
-                </div>
-            </div>
+        <div class="features">
+            <div class="feature"><span class="feature-icon">🔒</span>AES-256<br>ENCRYPTION</div>
+            <div class="feature"><span class="feature-icon">⛓</span>BLOCKCHAIN<br>VERIFIED</div>
+            <div class="feature"><span class="feature-icon">☁</span>IPFS<br>STORAGE</div>
+            <div class="feature"><span class="feature-icon">🤖</span>AI THREAT<br>DETECTION</div>
         </div>
     </div>
+</div>
 </body>
 </html>

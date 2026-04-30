@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel — SecureShare{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// System Administration</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">SUPERUSER CONTROL PANEL · FULL SYSTEM ACCESS</p>
+    </div>
+    <span class="ss-badge ss-badge-danger" style="font-size:12px;padding:8px 16px;">⚡ ADMIN MODE</span>
+</div>
+
+<!-- System Stats -->
+<div class="ss-grid ss-grid-4 mb-5">
+    <div class="ss-stat">
+        <span class="ss-stat-icon text-accent"><i class="bi bi-people"></i></span>
+        <div class="ss-stat-value">{{ total_users }}</div>
+        <div class="ss-stat-label">Total Users</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-file-earmark-lock"></i></span>
+        <div class="ss-stat-value" style="color:var(--success);">{{ total_files }}</div>
+        <div class="ss-stat-label">Total Files</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:#a78bfa;"><i class="bi bi-share"></i></span>
+        <div class="ss-stat-value" style="color:#a78bfa;">{{ total_shares }}</div>
+        <div class="ss-stat-label">Total Shares</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:var(--danger);"><i class="bi bi-exclamation-triangle"></i></span>
+        <div class="ss-stat-value" style="color:var(--danger);">{{ failed_logins }}</div>
+        <div class="ss-stat-label">Failed Logins</div>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="ss-grid ss-grid-2 mb-5" style="gap:24px;">
+
+    <!-- All Users Table -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-people"></i> All Users</div>
+        <div style="overflow-x:auto;">
+            <table class="ss-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Wallet</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in all_users %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--accent);flex-shrink:0;">{{ u.username|slice:":2"|upper }}</div>
+                                <div>
+                                    <div style="font-weight:600;font-size:13px;">{{ u.username }}</div>
+                                    <div class="mono text-dim" style="font-size:10px;">{{ u.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="mono text-dim" style="font-size:11px;">{{ u.date_joined|date:"d M Y" }}</td>
+                        <td>
+                            {% if u.is_superuser %}<span class="ss-badge ss-badge-warning">ADMIN</span>
+                            {% elif u.is_active %}<span class="ss-badge ss-badge-success">ACTIVE</span>
+                            {% else %}<span class="ss-badge ss-badge-danger">BANNED</span>{% endif %}
+                        </td>
+                        <td class="mono text-dim" style="font-size:10px;">
+                            {% if u.wallet_address %}{{ u.wallet_address|slice:":10" }}…{% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_user_detail' u.id %}" class="ss-btn ss-btn-sm"><i class="bi bi-eye"></i> Manage</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-activity"></i> System-Wide Activity</div>
+        <div style="overflow-x:auto;">
+            <table class="ss-table">
+                <thead>
+                    <tr><th>User</th><th>Action</th><th>Time</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td style="font-size:13px;">{{ log.user.username|default:"Anonymous" }}</td>
+                        <td>
+                            <span class="mono" style="font-size:12px;
+                                {% if log.action == 'upload' %}color:var(--accent);
+                                {% elif log.action == 'download' %}color:var(--success);
+                                {% elif log.action == 'failed_login' %}color:var(--danger);
+                                {% elif log.action == 'delete' %}color:var(--danger);
+                                {% else %}color:var(--text-dim);{% endif %}">
+                                {{ log.action|upper }}
+                            </span>
+                        </td>
+                        <td class="mono text-dim" style="font-size:10px;">{{ log.timestamp|date:"d M · H:i" }}</td>
+                        <td>
+                            {% if log.success %}<span class="ss-badge ss-badge-success">OK</span>
+                            {% else %}<span class="ss-badge ss-badge-danger">FAIL</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Today's stats -->
+<div class="ss-card">
+    <div class="ss-card-body" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+        <span class="mono text-dim" style="font-size:10px;letter-spacing:2px;">TODAY</span>
+        <span class="mono" style="font-size:13px;color:var(--accent);">{{ uploads_today }} uploads</span>
+        <span class="mono text-dim" style="font-size:10px;">·</span>
+        <span class="mono" style="font-size:13px;color:var(--danger);">{{ failed_logins }} failed logins total</span>
+        <span class="mono text-dim" style="font-size:10px;">·</span>
+        <span class="mono" style="font-size:13px;">{{ total_logs }} total activity records</span>
+        <a href="/admin/" class="ss-btn ss-btn-sm" style="margin-left:auto;"><i class="bi bi-gear"></i> Django Admin</a>
+    </div>
+</div>
+
+{% endblock %}

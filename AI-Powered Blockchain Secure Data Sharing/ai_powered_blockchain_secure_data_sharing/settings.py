@@ -5,11 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
-
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -19,14 +16,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Custom apps
     'users',
     'files',
     'blockchain',
     'ai_monitor',
-
-    # Third-party
     'crispy_forms',
     'crispy_bootstrap5',
 ]
@@ -46,9 +39,8 @@ ROOT_URLCONF = 'ai_powered_blockchain_secure_data_sharing.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Global templates folder (base.html lives here)
         'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,   # Scans <app>/templates/ automatically
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -82,10 +74,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-_STATIC_DIR = BASE_DIR / 'static'
-if _STATIC_DIR.exists():
-    STATICFILES_DIRS = [_STATIC_DIR]
-
 MEDIA_URL  = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -93,7 +81,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL           = '/accounts/login/'

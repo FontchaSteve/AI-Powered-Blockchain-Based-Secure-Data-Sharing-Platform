@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Manage {{ target.username }} — Admin{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// User Management</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">FULL CONTROL · {{ target.username|upper }}</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="ss-btn"><i class="bi bi-arrow-left"></i> Back to Admin</a>
+</div>
+
+<!-- User Info + Actions -->
+<div class="ss-grid ss-grid-2 mb-5" style="gap:24px;">
+
+    <!-- User Card -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-person-badge"></i> User Details</div>
+        <div class="ss-card-body">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:20px;color:var(--accent);flex-shrink:0;">{{ target.username|slice:":2"|upper }}</div>
+                <div>
+                    <div style="font-size:20px;font-weight:700;">{{ target.username }}</div>
+                    <div class="mono text-dim" style="font-size:11px;">{{ target.email }}</div>
+                    <div style="display:flex;gap:6px;margin-top:6px;">
+                        {% if target.is_superuser %}<span class="ss-badge ss-badge-warning">SUPERUSER</span>{% endif %}
+                        {% if target.is_staff %}<span class="ss-badge ss-badge-info">STAFF</span>{% endif %}
+                        {% if target.is_active %}<span class="ss-badge ss-badge-success">ACTIVE</span>
+                        {% else %}<span class="ss-badge ss-badge-danger">BANNED</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <table style="width:100%;border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:8px 0;width:40%;">JOINED</td>
+                    <td class="mono" style="font-size:12px;padding:8px 0;">{{ target.date_joined|date:"d M Y · H:i" }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:8px 0;">LAST LOGIN</td>
+                    <td class="mono" style="font-size:12px;padding:8px 0;">{{ target.last_login|date:"d M Y · H:i"|default:"Never" }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:8px 0;">WALLET</td>
+                    <td class="mono text-accent" style="font-size:11px;padding:8px 0;word-break:break-all;">{{ target.wallet_address|default:"Not assigned" }}</td>
+                </tr>
+                <tr>
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:8px 0;">FILES</td>
+                    <td class="mono" style="font-size:12px;padding:8px 0;">{{ files|length }} files</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-sliders"></i> Actions</div>
+        <div class="ss-card-body" style="display:flex;flex-direction:column;gap:12px;">
+
+            <!-- Toggle Active -->
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_active">
+                <button type="submit" class="ss-btn w-100 {% if target.is_active %}ss-btn-danger{% else %}ss-btn-success{% endif %}">
+                    {% if target.is_active %}<i class="bi bi-slash-circle"></i> Ban / Deactivate User
+                    {% else %}<i class="bi bi-check-circle"></i> Activate User{% endif %}
+                </button>
+            </form>
+
+            <!-- Toggle Staff -->
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_staff">
+                <button type="submit" class="ss-btn w-100">
+                    {% if target.is_staff %}<i class="bi bi-person-dash"></i> Remove Staff Status
+                    {% else %}<i class="bi bi-person-check"></i> Grant Staff Status{% endif %}
+                </button>
+            </form>
+
+            <!-- Reset Wallet -->
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="reset_wallet">
+                <button type="submit" class="ss-btn w-100 ss-btn-purple">
+                    <i class="bi bi-wallet2"></i> Reassign Wallet Address
+                </button>
+            </form>
+
+            <!-- Delete User -->
+            {% if target != request.user %}
+            <form method="POST" onsubmit="return confirm('PERMANENTLY delete user {{ target.username }} and ALL their files? This cannot be undone.');">
+                {% csrf_token %}<input type="hidden" name="action" value="delete_user">
+                <button type="submit" class="ss-btn ss-btn-danger w-100">
+                    <i class="bi bi-person-x"></i> Delete User Permanently
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- User's Files -->
+<div class="ss-card mb-5">
+    <div class="ss-card-header">
+        <i class="bi bi-file-earmark-lock"></i> User's Files
+        <span class="ss-badge ss-badge-info" style="margin-left:8px;">{{ files|length }}</span>
+    </div>
+    {% if files %}
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead><tr><th>Filename</th><th>Size</th><th>Storage</th><th>Uploaded</th><th>Blockchain</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for f in files %}
+                <tr>
+                    <td style="font-weight:600;font-size:13px;">{{ f.filename }}</td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ f.file_size_display }}</td>
+                    <td>{% if f.ipfs_cid %}<span class="ss-badge ss-badge-info">☁ IPFS</span>{% else %}<span class="ss-badge ss-badge-gray">💾 Local</span>{% endif %}</td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ f.upload_date|date:"d M Y · H:i" }}</td>
+                    <td>{% if f.blockchain_tx_hash %}<span class="ss-badge ss-badge-success">Verified</span>{% else %}<span class="ss-badge ss-badge-gray">—</span>{% endif %}</td>
+                    <td>
+                        <form method="POST" action="{% url 'admin_delete_file' f.id %}" onsubmit="return confirm('Delete file {{ f.filename }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="ss-card-body" style="text-align:center;padding:30px;color:var(--text-dim);">
+        <div class="mono" style="font-size:12px;letter-spacing:2px;">NO FILES</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Activity Log -->
+<div class="ss-card">
+    <div class="ss-card-header"><i class="bi bi-list-ul"></i> Recent Activity (last 20)</div>
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead><tr><th>Action</th><th>Time</th><th>IP</th><th>Status</th><th>Details</th></tr></thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="mono" style="font-size:12px;
+                        {% if log.action == 'upload' %}color:var(--accent);
+                        {% elif log.action == 'failed_login' %}color:var(--danger);
+                        {% elif log.action == 'download' %}color:var(--success);
+                        {% else %}color:var(--text-dim);{% endif %}">
+                        {{ log.action|upper }}
+                    </td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ log.timestamp|date:"d M Y · H:i" }}</td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ log.ip_address|default:"—" }}</td>
+                    <td>{% if log.success %}<span class="ss-badge ss-badge-success">OK</span>{% else %}<span class="ss-badge ss-badge-danger">FAIL</span>{% endif %}</td>
+                    <td class="text-dim" style="font-size:12px;">{{ log.details|default:"—"|truncatechars:50 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);" class="mono">NO ACTIVITY</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
