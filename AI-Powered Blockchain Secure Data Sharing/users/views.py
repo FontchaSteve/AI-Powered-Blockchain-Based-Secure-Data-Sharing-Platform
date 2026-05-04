@@ -238,3 +238,136 @@ def admin_delete_file(request, file_id):
         messages.success(request, f"File '{filename}' deleted.")
         return redirect('admin_user_detail', user_id=owner_id)
     return redirect('admin_dashboard')
+
+
+@admin_required
+def admin_dashboard(request):
+    from files.models import File, FileShare
+
+    all_users = CustomUser.objects.prefetch_related('owned_files').order_by('-date_joined')
+    all_files = File.objects.select_related('owner').order_by('-upload_date')
+
+    context = {
+        # Stats
+        'total_users':    CustomUser.objects.count(),
+        'active_users':   CustomUser.objects.filter(is_active=True).count(),
+        'banned_users':   CustomUser.objects.filter(is_active=False).count(),
+        'total_files':    File.objects.count(),
+        'ipfs_files':     File.objects.exclude(ipfs_cid=None).exclude(ipfs_cid='').count(),
+        'local_files':    File.objects.filter(ipfs_cid=None).count(),
+        'total_shares':   FileShare.objects.count(),
+        'total_logs':     ActivityLog.objects.count(),
+        'failed_logins':  ActivityLog.objects.filter(action='failed_login').count(),
+        'uploads_today':  ActivityLog.objects.filter(
+                              action='upload',
+                              timestamp__date=timezone.now().date()
+                          ).count(),
+        # Table data
+        'all_users':      all_users,
+        'all_files':      all_files,
+        'recent_logs':    ActivityLog.objects.select_related('user').order_by('-timestamp')[:200],
+        # Tabs definition for template
+        'tabs': [
+            ('users',    'Users',    'people-fill'),
+            ('files',    'Files',    'file-earmark-lock-fill'),
+            ('activity', 'Activity', 'activity'),
+        ],
+    }
+    return render(request, 'admin_panel/dashboard.html', context)
+
+
+@admin_required
+def admin_user_detail(request, user_id):
+    from files.models import File, FileShare
+    target = get_object_or_404(CustomUser, id=user_id)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'toggle_active':
+            if target == request.user:
+                messages.error(request, "You cannot deactivate your own account.")
+            else:
+                target.is_active = not target.is_active
+                target.save(update_fields=['is_active'])
+                status = "activated" if target.is_active else "banned"
+                messages.success(request, f"User {target.username} {status}.")
+            return redirect('admin_user_detail', user_id=user_id)
+
+        if action == 'toggle_staff':
+            target.is_staff = not target.is_staff
+            target.save(update_fields=['is_staff'])
+            messages.success(request, f"Staff status updated for {target.username}.")
+            return redirect('admin_user_detail', user_id=user_id)
+
+        if action == 'delete_user':
+            if target == request.user:
+                messages.error(request, "You cannot delete your own account.")
+            else:
+                username = target.username
+                target.delete()
+                messages.success(request, f"User '{username}' deleted.")
+                return redirect('admin_dashboard')
+            return redirect('admin_user_detail', user_id=user_id)
+
+        if action == 'reset_wallet':
+            auto_assign_wallet(target)
+            messages.success(request, f"Wallet reassigned for {target.username}.")
+            return redirect('admin_user_detail', user_id=user_id)
+
+    context = {
+        'target':       target,
+        'files':        File.objects.filter(owner=target).order_by('-upload_date'),
+        'shares_given': FileShare.objects.filter(shared_by=target).select_related('shared_with', 'file'),
+        'shares_recv':  FileShare.objects.filter(shared_with=target).select_related('shared_by', 'file'),
+        'logs':         ActivityLog.objects.filter(user=target).order_by('-timestamp')[:30],
+        'total_downloads': ActivityLog.objects.filter(user=target, action='download').count(),
+        'total_uploads':   ActivityLog.objects.filter(user=target, action='upload').count(),
+        'total_logins':    ActivityLog.objects.filter(user=target, action='login').count(),
+    }
+    return render(request, 'admin_panel/user_detail.html', context)
+
+
+@admin_required
+def admin_delete_file(request, file_id):
+    from files.models import File
+    import os
+    from files.ipfs_utils import unpin_from_ipfs
+    file_obj = get_object_or_404(File, id=file_id)
+    if request.method == 'POST':
+        owner_id = file_obj.owner.id
+        if file_obj.ipfs_cid:
+            unpin_from_ipfs(file_obj.ipfs_cid)
+        if file_obj.encrypted_file_path and os.path.exists(file_obj.encrypted_file_path):
+            os.remove(file_obj.encrypted_file_path)
+        filename = file_obj.filename
+        file_obj.delete()
+        messages.success(request, f"File '{filename}' deleted.")
+        return redirect('admin_user_detail', user_id=owner_id)
+    return redirect('admin_dashboard')
+
+
+@admin_required
+def admin_export_logs(request):
+    """Export all activity logs as a CSV file."""
+    import csv
+    from django.http import HttpResponse
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="secureshare_activity_logs.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Timestamp', 'Username', 'Action', 'Success', 'IP Address', 'Details', 'File Hash'])
+
+    for log in ActivityLog.objects.select_related('user').order_by('-timestamp'):
+        writer.writerow([
+            log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            log.user.username if log.user else 'Anonymous',
+            log.action,
+            'Yes' if log.success else 'No',
+            log.ip_address or '',
+            log.details or '',
+            log.file_hash or '',
+        ])
+
+    return response

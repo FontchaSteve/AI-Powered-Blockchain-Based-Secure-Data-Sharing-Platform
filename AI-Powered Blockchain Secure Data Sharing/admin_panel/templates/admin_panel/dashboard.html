@@ -2,78 +2,146 @@
 {% block title %}Admin Panel — SecureShare{% endblock %}
 {% block content %}
 
+<!-- Header -->
 <div class="d-flex justify-between align-center mb-5">
     <div>
         <div class="ss-section-title">// System Administration</div>
-        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">SUPERUSER CONTROL PANEL · FULL SYSTEM ACCESS</p>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
+            SUPERUSER CONTROL PANEL &nbsp;·&nbsp; FULL SYSTEM ACCESS &nbsp;·&nbsp; {{ request.user.username|upper }}
+        </p>
     </div>
-    <span class="ss-badge ss-badge-danger" style="font-size:12px;padding:8px 16px;">⚡ ADMIN MODE</span>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <span class="ss-badge ss-badge-danger" style="font-size:11px;padding:8px 16px;animation:pulse 2s infinite;">⚡ ADMIN MODE</span>
+        <a href="/admin/" class="ss-btn ss-btn-sm"><i class="bi bi-gear"></i> Django Admin</a>
+    </div>
 </div>
 
-<!-- System Stats -->
+<!-- Big Stats -->
 <div class="ss-grid ss-grid-4 mb-5">
-    <div class="ss-stat">
-        <span class="ss-stat-icon text-accent"><i class="bi bi-people"></i></span>
+    <div class="ss-stat" style="cursor:pointer;" onclick="showSection('users')">
+        <span class="ss-stat-icon text-accent"><i class="bi bi-people-fill"></i></span>
         <div class="ss-stat-value">{{ total_users }}</div>
         <div class="ss-stat-label">Total Users</div>
+        <div class="mono" style="font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-top:6px;">{{ active_users }} active · {{ banned_users }} banned</div>
     </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-file-earmark-lock"></i></span>
+    <div class="ss-stat" style="cursor:pointer;" onclick="showSection('files')">
+        <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-file-earmark-lock-fill"></i></span>
         <div class="ss-stat-value" style="color:var(--success);">{{ total_files }}</div>
         <div class="ss-stat-label">Total Files</div>
+        <div class="mono" style="font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-top:6px;">{{ ipfs_files }} on IPFS · {{ local_files }} local</div>
     </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:#a78bfa;"><i class="bi bi-share"></i></span>
-        <div class="ss-stat-value" style="color:#a78bfa;">{{ total_shares }}</div>
-        <div class="ss-stat-label">Total Shares</div>
-    </div>
-    <div class="ss-stat">
-        <span class="ss-stat-icon" style="color:var(--danger);"><i class="bi bi-exclamation-triangle"></i></span>
+    <div class="ss-stat" style="cursor:pointer;" onclick="showSection('activity')">
+        <span class="ss-stat-icon" style="color:var(--danger);"><i class="bi bi-shield-exclamation"></i></span>
         <div class="ss-stat-value" style="color:var(--danger);">{{ failed_logins }}</div>
         <div class="ss-stat-label">Failed Logins</div>
+        <div class="mono" style="font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-top:6px;">{{ uploads_today }} uploads today</div>
+    </div>
+    <div class="ss-stat">
+        <span class="ss-stat-icon" style="color:#a78bfa;"><i class="bi bi-share-fill"></i></span>
+        <div class="ss-stat-value" style="color:#a78bfa;">{{ total_shares }}</div>
+        <div class="ss-stat-label">File Shares</div>
+        <div class="mono" style="font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-top:6px;">{{ total_logs }} activity records</div>
     </div>
 </div>
 
-<!-- Quick Stats Row -->
-<div class="ss-grid ss-grid-2 mb-5" style="gap:24px;">
+<!-- Tab navigation -->
+<div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;">
+    {% for tab, label, icon in tabs %}
+    <button onclick="showSection('{{ tab }}')" id="tab-{{ tab }}"
+        style="font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;
+               padding:10px 20px;border:none;background:transparent;cursor:pointer;
+               border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s;
+               color:var(--text-dim);">
+        <i class="bi bi-{{ icon }}"></i> {{ label }}
+    </button>
+    {% endfor %}
+</div>
 
-    <!-- All Users Table -->
+<!-- USERS SECTION -->
+<div id="section-users" class="admin-section">
+    <!-- Search + Filter bar -->
+    <div class="ss-card mb-4">
+        <div class="ss-card-body" style="padding:14px 20px;">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="position:relative;flex:1;min-width:200px;">
+                    <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;"></i>
+                    <input type="text" id="userSearch" class="ss-input" placeholder="Search users by name or email..."
+                           style="padding-left:36px;" oninput="filterUsers()">
+                </div>
+                <select id="userStatusFilter" class="ss-input" style="width:150px;" onchange="filterUsers()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="banned">Banned</option>
+                    <option value="admin">Admins</option>
+                </select>
+                <select id="userWalletFilter" class="ss-input" style="width:160px;" onchange="filterUsers()">
+                    <option value="">All Wallets</option>
+                    <option value="assigned">Wallet Assigned</option>
+                    <option value="none">No Wallet</option>
+                </select>
+                <span class="mono text-dim" id="userCount" style="font-size:11px;white-space:nowrap;"></span>
+            </div>
+        </div>
+    </div>
+
     <div class="ss-card">
-        <div class="ss-card-header"><i class="bi bi-people"></i> All Users</div>
         <div style="overflow-x:auto;">
-            <table class="ss-table">
+            <table class="ss-table" id="usersTable">
                 <thead>
                     <tr>
                         <th>User</th>
+                        <th>Email</th>
                         <th>Joined</th>
-                        <th>Status</th>
+                        <th>Files</th>
                         <th>Wallet</th>
-                        <th></th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="usersBody">
                     {% for u in all_users %}
-                    <tr>
+                    <tr class="user-row"
+                        data-name="{{ u.username|lower }} {{ u.email|lower }}"
+                        data-status="{% if u.is_superuser %}admin{% elif u.is_active %}active{% else %}banned{% endif %}"
+                        data-wallet="{% if u.wallet_address %}assigned{% else %}none{% endif %}">
                         <td>
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--accent);flex-shrink:0;">{{ u.username|slice:":2"|upper }}</div>
+                                <div style="width:34px;height:34px;border-radius:50%;
+                                    background:{% if u.is_superuser %}rgba(255,165,2,0.15){% else %}rgba(0,212,255,0.1){% endif %};
+                                    border:1px solid {% if u.is_superuser %}rgba(255,165,2,0.3){% else %}rgba(0,212,255,0.2){% endif %};
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-family:var(--mono);font-size:12px;
+                                    color:{% if u.is_superuser %}var(--warning){% else %}var(--accent){% endif %};
+                                    flex-shrink:0;">{{ u.username|slice:":2"|upper }}</div>
                                 <div>
-                                    <div style="font-weight:600;font-size:13px;">{{ u.username }}</div>
-                                    <div class="mono text-dim" style="font-size:10px;">{{ u.email }}</div>
+                                    <div style="font-weight:700;font-size:14px;">{{ u.username }}</div>
+                                    {% if u.is_superuser %}<div class="mono" style="font-size:9px;color:var(--warning);letter-spacing:1px;">SUPERUSER</div>{% endif %}
                                 </div>
                             </div>
                         </td>
+                        <td class="mono text-dim" style="font-size:12px;">{{ u.email }}</td>
                         <td class="mono text-dim" style="font-size:11px;">{{ u.date_joined|date:"d M Y" }}</td>
+                        <td>
+                            <span class="ss-badge ss-badge-info">{{ u.owned_files.count }}</span>
+                        </td>
+                        <td class="mono text-dim" style="font-size:10px;">
+                            {% if u.wallet_address %}
+                                <span style="color:var(--success);">{{ u.wallet_address|slice:":8" }}…{{ u.wallet_address|slice:"-4:" }}</span>
+                            {% else %}
+                                <span style="color:var(--danger);">Not assigned</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if u.is_superuser %}<span class="ss-badge ss-badge-warning">ADMIN</span>
                             {% elif u.is_active %}<span class="ss-badge ss-badge-success">ACTIVE</span>
                             {% else %}<span class="ss-badge ss-badge-danger">BANNED</span>{% endif %}
                         </td>
-                        <td class="mono text-dim" style="font-size:10px;">
-                            {% if u.wallet_address %}{{ u.wallet_address|slice:":10" }}…{% else %}—{% endif %}
-                        </td>
                         <td>
-                            <a href="{% url 'admin_user_detail' u.id %}" class="ss-btn ss-btn-sm"><i class="bi bi-eye"></i> Manage</a>
+                            <div style="display:flex;gap:6px;">
+                                <a href="{% url 'admin_user_detail' u.id %}" class="ss-btn ss-btn-sm" title="Manage User">
+                                    <i class="bi bi-sliders"></i> Manage
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -81,34 +149,143 @@
             </table>
         </div>
     </div>
+</div>
 
-    <!-- Recent Activity -->
+<!-- FILES SECTION -->
+<div id="section-files" class="admin-section" style="display:none;">
+    <div class="ss-card mb-4">
+        <div class="ss-card-body" style="padding:14px 20px;">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="position:relative;flex:1;min-width:200px;">
+                    <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;"></i>
+                    <input type="text" id="fileSearch" class="ss-input" placeholder="Search by filename or owner..."
+                           style="padding-left:36px;" oninput="filterFiles()">
+                </div>
+                <select id="fileStorageFilter" class="ss-input" style="width:150px;" onchange="filterFiles()">
+                    <option value="">All Storage</option>
+                    <option value="ipfs">IPFS Only</option>
+                    <option value="local">Local Only</option>
+                </select>
+                <span class="mono text-dim" id="fileCount" style="font-size:11px;white-space:nowrap;"></span>
+            </div>
+        </div>
+    </div>
     <div class="ss-card">
-        <div class="ss-card-header"><i class="bi bi-activity"></i> System-Wide Activity</div>
         <div style="overflow-x:auto;">
-            <table class="ss-table">
+            <table class="ss-table" id="filesTable">
                 <thead>
-                    <tr><th>User</th><th>Action</th><th>Time</th><th>Status</th></tr>
+                    <tr><th>Filename</th><th>Owner</th><th>Size</th><th>Storage</th><th>Uploaded</th><th>Blockchain</th><th>Action</th></tr>
                 </thead>
-                <tbody>
+                <tbody id="filesBody">
+                    {% for f in all_files %}
+                    <tr class="file-row"
+                        data-name="{{ f.filename|lower }} {{ f.owner.username|lower }}"
+                        data-storage="{% if f.ipfs_cid %}ipfs{% else %}local{% endif %}">
+                        <td>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:18px;">
+                                    {% with n=f.filename|lower %}
+                                    {% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n or '.jpeg' in n %}🖼️{% elif '.mp4' in n or '.mov' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n %}📦{% else %}📄{% endif %}
+                                    {% endwith %}
+                                </span>
+                                <div>
+                                    <div style="font-weight:600;font-size:13px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.filename }}</div>
+                                    <div class="mono text-dim" style="font-size:9px;">{{ f.file_hash|slice:":12" }}…</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_user_detail' f.owner.id %}" style="color:var(--accent);text-decoration:none;font-size:13px;">{{ f.owner.username }}</a>
+                        </td>
+                        <td class="mono text-dim" style="font-size:12px;">{{ f.file_size_display }}</td>
+                        <td>
+                            {% if f.ipfs_cid %}<span class="ss-badge ss-badge-info">☁ IPFS</span>
+                            {% else %}<span class="ss-badge ss-badge-gray">💾 Local</span>{% endif %}
+                        </td>
+                        <td class="mono text-dim" style="font-size:11px;">{{ f.upload_date|date:"d M Y" }}</td>
+                        <td>
+                            {% if f.blockchain_tx_hash %}<span class="ss-badge ss-badge-success">✓</span>
+                            {% else %}<span class="ss-badge ss-badge-gray">—</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{% url 'admin_delete_file' f.id %}" onsubmit="return confirm('Delete {{ f.filename }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ACTIVITY SECTION -->
+<div id="section-activity" class="admin-section" style="display:none;">
+    <div class="ss-card mb-4">
+        <div class="ss-card-body" style="padding:14px 20px;">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="position:relative;flex:1;min-width:200px;">
+                    <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;"></i>
+                    <input type="text" id="logSearch" class="ss-input" placeholder="Search by username or action..."
+                           style="padding-left:36px;" oninput="filterLogs()">
+                </div>
+                <select id="logActionFilter" class="ss-input" style="width:160px;" onchange="filterLogs()">
+                    <option value="">All Actions</option>
+                    <option value="upload">Uploads</option>
+                    <option value="download">Downloads</option>
+                    <option value="login">Logins</option>
+                    <option value="failed_login">Failed Logins</option>
+                    <option value="share">Shares</option>
+                    <option value="delete">Deletions</option>
+                </select>
+                <select id="logStatusFilter" class="ss-input" style="width:130px;" onchange="filterLogs()">
+                    <option value="">All Results</option>
+                    <option value="ok">Success Only</option>
+                    <option value="fail">Failures Only</option>
+                </select>
+                <a href="{% url 'admin_export_logs' %}" class="ss-btn ss-btn-sm ss-btn-success">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="ss-card">
+        <div style="overflow-x:auto;">
+            <table class="ss-table" id="logsTable">
+                <thead>
+                    <tr><th>User</th><th>Action</th><th>Time</th><th>IP</th><th>Status</th><th>Details</th></tr>
+                </thead>
+                <tbody id="logsBody">
                     {% for log in recent_logs %}
-                    <tr>
-                        <td style="font-size:13px;">{{ log.user.username|default:"Anonymous" }}</td>
+                    <tr class="log-row"
+                        data-name="{{ log.user.username|default:'anonymous'|lower }}"
+                        data-action="{{ log.action }}"
+                        data-status="{% if log.success %}ok{% else %}fail{% endif %}">
+                        <td>
+                            {% if log.user %}
+                            <a href="{% url 'admin_user_detail' log.user.id %}" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:13px;">{{ log.user.username }}</a>
+                            {% else %}<span class="mono text-dim" style="font-size:12px;">Anonymous</span>{% endif %}
+                        </td>
                         <td>
                             <span class="mono" style="font-size:12px;
                                 {% if log.action == 'upload' %}color:var(--accent);
                                 {% elif log.action == 'download' %}color:var(--success);
                                 {% elif log.action == 'failed_login' %}color:var(--danger);
                                 {% elif log.action == 'delete' %}color:var(--danger);
+                                {% elif log.action == 'share' %}color:#a78bfa;
                                 {% else %}color:var(--text-dim);{% endif %}">
                                 {{ log.action|upper }}
                             </span>
                         </td>
-                        <td class="mono text-dim" style="font-size:10px;">{{ log.timestamp|date:"d M · H:i" }}</td>
+                        <td class="mono text-dim" style="font-size:11px;">{{ log.timestamp|date:"d M Y · H:i" }}</td>
+                        <td class="mono text-dim" style="font-size:11px;">{{ log.ip_address|default:"—" }}</td>
                         <td>
                             {% if log.success %}<span class="ss-badge ss-badge-success">OK</span>
                             {% else %}<span class="ss-badge ss-badge-danger">FAIL</span>{% endif %}
                         </td>
+                        <td class="text-dim" style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.details|default:"—" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -117,17 +294,76 @@
     </div>
 </div>
 
-<!-- Today's stats -->
-<div class="ss-card">
-    <div class="ss-card-body" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-        <span class="mono text-dim" style="font-size:10px;letter-spacing:2px;">TODAY</span>
-        <span class="mono" style="font-size:13px;color:var(--accent);">{{ uploads_today }} uploads</span>
-        <span class="mono text-dim" style="font-size:10px;">·</span>
-        <span class="mono" style="font-size:13px;color:var(--danger);">{{ failed_logins }} failed logins total</span>
-        <span class="mono text-dim" style="font-size:10px;">·</span>
-        <span class="mono" style="font-size:13px;">{{ total_logs }} total activity records</span>
-        <a href="/admin/" class="ss-btn ss-btn-sm" style="margin-left:auto;"><i class="bi bi-gear"></i> Django Admin</a>
-    </div>
-</div>
+<style>
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.admin-section{animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
 
+<script>
+// Tab system
+const tabs = ['users','files','activity'];
+function showSection(name) {
+    tabs.forEach(t => {
+        document.getElementById('section-' + t).style.display = t === name ? '' : 'none';
+        const btn = document.getElementById('tab-' + t);
+        if (btn) {
+            btn.style.color      = t === name ? 'var(--accent)'  : 'var(--text-dim)';
+            btn.style.borderColor= t === name ? 'var(--accent)'  : 'transparent';
+            btn.style.background = t === name ? 'rgba(0,212,255,0.05)' : 'transparent';
+        }
+    });
+}
+showSection('users');
+
+// Filter users
+function filterUsers() {
+    const s   = document.getElementById('userSearch').value.toLowerCase();
+    const st  = document.getElementById('userStatusFilter').value;
+    const wl  = document.getElementById('userWalletFilter').value;
+    const rows= document.querySelectorAll('.user-row');
+    let count = 0;
+    rows.forEach(r => {
+        const show = (!s || r.dataset.name.includes(s))
+                  && (!st || r.dataset.status === st)
+                  && (!wl || r.dataset.wallet === wl);
+        r.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('userCount').textContent = `${count} of {{ total_users }} users`;
+}
+
+// Filter files
+function filterFiles() {
+    const s  = document.getElementById('fileSearch').value.toLowerCase();
+    const st = document.getElementById('fileStorageFilter').value;
+    const rows = document.querySelectorAll('.file-row');
+    let count = 0;
+    rows.forEach(r => {
+        const show = (!s || r.dataset.name.includes(s)) && (!st || r.dataset.storage === st);
+        r.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('fileCount').textContent = `${count} of {{ total_files }} files`;
+}
+
+// Filter logs
+function filterLogs() {
+    const s   = document.getElementById('logSearch').value.toLowerCase();
+    const act = document.getElementById('logActionFilter').value;
+    const st  = document.getElementById('logStatusFilter').value;
+    const rows= document.querySelectorAll('.log-row');
+    rows.forEach(r => {
+        const show = (!s   || r.dataset.name.includes(s))
+                  && (!act || r.dataset.action === act)
+                  && (!st  || r.dataset.status === st);
+        r.style.display = show ? '' : 'none';
+    });
+}
+
+// Init counts
+filterUsers();
+filterFiles();
+filterLogs();
+</script>
 {% endblock %}
