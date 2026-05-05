@@ -68,6 +68,7 @@
                 <tr>
                     <th>File Name</th>
                     <th>Size</th>
+                    <th>Downloads</th>
                     <th>Uploaded</th>
                     <th>Storage</th>
                     <th>Blockchain</th>
@@ -106,7 +107,11 @@
                         </div>
                     </td>
                     <td class="mono text-dim" style="font-size:12px;">{{ file.file_size_display }}</td>
-                    <td class="mono text-dim" style="font-size:12px;">{{ file.upload_date|date:"d M Y" }}<br><span style="font-size:10px;">{{ file.upload_date|date:"H:i" }}</span></td>
+                    <td style="text-align:center;">
+                            <span class="mono" style="font-size:13px;color:var(--accent);">{{ file.download_count }}</span>
+                            <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">TIMES</div>
+                        </td>
+                        <td class="mono text-dim" style="font-size:12px;">{{ file.upload_date|date:"d M Y" }}<br><span style="font-size:10px;">{{ file.upload_date|date:"H:i" }}</span></td>
                     <td>
                         {% if file.ipfs_cid %}
                             <span class="ss-badge ss-badge-info">☁ IPFS</span>

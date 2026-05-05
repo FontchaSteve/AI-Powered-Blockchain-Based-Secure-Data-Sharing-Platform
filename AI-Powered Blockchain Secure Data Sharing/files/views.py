@@ -2,16 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
+from django.utils import timezone
 import os
 import datetime
 
 from .forms import FileUploadForm
 from .encryption_utils import generate_file_hash, encrypt_file, save_encrypted_file, decrypt_file
 from .models import File, FileShare
-from .ipfs_utils import (
-    upload_to_ipfs, download_from_ipfs, unpin_from_ipfs,
-    is_pinata_configured, get_ipfs_url,
-)
+from .ipfs_utils import upload_to_ipfs, download_from_ipfs, unpin_from_ipfs, is_pinata_configured
 from blockchain.contract_interaction import get_contract
 from users.models import ActivityLog, CustomUser
 
@@ -53,7 +51,6 @@ def upload_file(request):
             uploaded_file = request.FILES['file']
             file_data     = uploaded_file.read()
 
-            # ── Size check (50 MB) ──
             if len(file_data) > 50 * 1024 * 1024:
                 messages.error(request, "File too large. Maximum size is 50 MB.")
                 return redirect('upload_file')
@@ -64,37 +61,28 @@ def upload_file(request):
                 messages.warning(request, "This exact file already exists in the vault.")
                 return redirect('my_files')
 
-            # ── Encrypt ──
             encrypted_data, encryption_key = encrypt_file(file_data)
             encrypted_filename = f"enc_{file_hash[:16]}_{uploaded_file.name}"
 
-            # ── Storage: IPFS (online) or local disk (fallback) ──
-            ipfs_cid   = None
-            file_path  = ''
+            ipfs_cid  = None
+            file_path = ''
 
             if ipfs_enabled:
                 try:
-                    ipfs_cid = upload_to_ipfs(encrypted_data, encrypted_filename)
-                    storage_msg = f"☁ Stored on IPFS (CID: {ipfs_cid[:16]}…)"
+                    ipfs_cid    = upload_to_ipfs(encrypted_data, encrypted_filename)
+                    storage_msg = f"☁ Stored on IPFS"
                 except Exception as e:
-                    # IPFS failed — fall back to local storage silently
-                    messages.warning(
-                        request,
-                        f"IPFS upload failed, saved locally instead: {str(e)}"
-                    )
-                    file_path = save_encrypted_file(encrypted_data, encrypted_filename)
-                    storage_msg = "💾 Stored locally (IPFS unavailable)"
+                    messages.warning(request, f"IPFS upload failed, saved locally: {str(e)}")
+                    file_path   = save_encrypted_file(encrypted_data, encrypted_filename)
+                    storage_msg = "💾 Stored locally"
             else:
                 file_path   = save_encrypted_file(encrypted_data, encrypted_filename)
-                storage_msg = "💾 Stored locally (IPFS not configured)"
+                storage_msg = "💾 Stored locally"
 
-            # ── Blockchain registration ──
             tx_hash_hex = None
             try:
                 w3, contract = get_contract()
-                # Use user's own wallet if set, otherwise first Ganache account
                 account = request.user.wallet_address or w3.eth.accounts[0]
-
                 tx = contract.functions.uploadFile(file_hash).build_transaction({
                     'from':  account,
                     'nonce': w3.eth.get_transaction_count(account),
@@ -103,17 +91,10 @@ def upload_file(request):
                 tx_hash     = w3.eth.send_transaction(tx)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
                 tx_hash_hex = tx_hash.hex()
-                messages.success(
-                    request,
-                    f"✅ File encrypted, {storage_msg}, registered on blockchain!"
-                )
+                messages.success(request, f"✅ File encrypted, {storage_msg}, registered on blockchain!")
             except Exception as e:
-                messages.warning(
-                    request,
-                    f"File saved ({storage_msg}) but blockchain registration failed: {str(e)}"
-                )
+                messages.warning(request, f"File saved ({storage_msg}) but blockchain failed: {str(e)}")
 
-            # ── Save to Django DB ──
             File.objects.create(
                 owner               = request.user,
                 filename            = uploaded_file.name,
@@ -124,24 +105,19 @@ def upload_file(request):
                 encryption_key      = encryption_key,
                 blockchain_tx_hash  = tx_hash_hex,
                 file_size           = len(file_data),
+                download_count      = 0,
             )
 
             ActivityLog.objects.create(
-                user       = request.user,
-                action     = 'upload',
-                file_hash  = file_hash,
-                success    = True,
-                ip_address = get_client_ip(request),
-                details    = f"Uploaded: {uploaded_file.name} | Storage: {'IPFS' if ipfs_cid else 'local'}",
+                user=request.user, action='upload', file_hash=file_hash,
+                success=True, ip_address=get_client_ip(request),
+                details=f"Uploaded: {uploaded_file.name}",
             )
             return redirect('dashboard')
     else:
         form = FileUploadForm()
 
-    return render(request, 'files/upload.html', {
-        'form':         form,
-        'ipfs_enabled': ipfs_enabled,
-    })
+    return render(request, 'files/upload.html', {'form': form, 'ipfs_enabled': ipfs_enabled})
 
 
 # ====================== DOWNLOAD (owner) ======================
@@ -154,54 +130,49 @@ def download_file(request, file_id):
 # ====================== DOWNLOAD SHARED ======================
 @login_required
 def download_shared_file(request, file_id):
-    share = get_object_or_404(
-        FileShare, file_id=file_id, shared_with=request.user, can_download=True
-    )
+    share = get_object_or_404(FileShare, file_id=file_id, shared_with=request.user, can_download=True)
+
+    # ── Check expiry ──
     if share.is_expired():
-        messages.error(request, "This share link has expired.")
+        messages.error(request, "This share link has expired. The owner would need to share it again.")
         return redirect('shared_with_me')
+
     return _do_download(request, share.file)
 
 
 def _do_download(request, file_obj):
-    """
-    Smart download: tries IPFS first if file has a CID,
-    falls back to local disk if IPFS fails or file is local-only.
-    """
     try:
-        # ── Fetch encrypted bytes ──
+        # Fetch encrypted bytes from IPFS or local
         if file_obj.ipfs_cid:
-            # File is stored on IPFS (online)
             try:
                 encrypted_data = download_from_ipfs(file_obj.ipfs_cid)
             except Exception as ipfs_err:
-                # If IPFS fails but we also have a local copy, use it
                 if file_obj.encrypted_file_path and os.path.exists(file_obj.encrypted_file_path):
                     with open(file_obj.encrypted_file_path, 'rb') as f:
                         encrypted_data = f.read()
                 else:
-                    raise ConnectionError(
-                        f"Could not retrieve file from IPFS: {ipfs_err}"
-                    )
+                    raise ConnectionError(f"Could not retrieve file from IPFS: {ipfs_err}")
         elif file_obj.encrypted_file_path and os.path.exists(file_obj.encrypted_file_path):
-            # File is stored locally
             with open(file_obj.encrypted_file_path, 'rb') as f:
                 encrypted_data = f.read()
         else:
             raise FileNotFoundError("File not found in IPFS or local storage.")
 
-        # ── Decrypt ──
-        key_bytes  = bytes(file_obj.encryption_key)
-        decrypted  = decrypt_file(encrypted_data, key_bytes)
+        # Decrypt
+        key_bytes = bytes(file_obj.encryption_key)
+        decrypted = decrypt_file(encrypted_data, key_bytes)
+
+        # ── Increment download count ──
+        File.objects.filter(pk=file_obj.pk).update(
+            download_count=file_obj.download_count + 1
+        )
 
         ActivityLog.objects.create(
-            user       = request.user,
-            action     = 'download',
-            file_hash  = file_obj.file_hash,
-            success    = True,
-            ip_address = get_client_ip(request),
-            details    = f"Downloaded: {file_obj.filename} | Source: {'IPFS' if file_obj.ipfs_cid else 'local'}",
+            user=request.user, action='download', file_hash=file_obj.file_hash,
+            success=True, ip_address=get_client_ip(request),
+            details=f"Downloaded: {file_obj.filename}",
         )
+
         response = HttpResponse(decrypted, content_type='application/octet-stream')
         response['Content-Disposition'] = f'attachment; filename="{file_obj.original_filename}"'
         return response
@@ -231,11 +202,8 @@ def delete_file(request, file_id):
     file_hash = file_obj.file_hash
     filename  = file_obj.filename
 
-    # Remove from IPFS if stored there
     if file_obj.ipfs_cid:
         unpin_from_ipfs(file_obj.ipfs_cid)
-
-    # Remove local copy if it exists
     if file_obj.encrypted_file_path and os.path.exists(file_obj.encrypted_file_path):
         os.remove(file_obj.encrypted_file_path)
 
@@ -267,9 +235,7 @@ def share_file(request, file_id):
         action = request.POST.get('action')
 
         if action == 'revoke':
-            share = get_object_or_404(
-                FileShare, id=request.POST.get('share_id'), file=file_obj
-            )
+            share = get_object_or_404(FileShare, id=request.POST.get('share_id'), file=file_obj)
             uname = share.shared_with.username
             share.delete()
             messages.success(request, f"Access revoked for {uname}.")
@@ -283,53 +249,83 @@ def share_file(request, file_id):
         else:
             try:
                 target = CustomUser.objects.get(username=username)
+
+                # ── Parse expiry date ──
+                expiry_days = request.POST.get('expiry_days', '').strip()
+                expires_at  = None
+                if expiry_days and expiry_days != '0':
+                    try:
+                        days       = int(expiry_days)
+                        expires_at = timezone.now() + datetime.timedelta(days=days)
+                    except ValueError:
+                        pass
+
                 share, created = FileShare.objects.get_or_create(
                     file=file_obj,
                     shared_with=target,
-                    defaults={'shared_by': request.user},
+                    defaults={
+                        'shared_by':  request.user,
+                        'expires_at': expires_at,
+                    },
                 )
-                if created:
-                    # Also record on blockchain if both users have wallets
+
+                if not created:
+                    # Update the expiry on an existing share
+                    share.expires_at = expires_at
+                    share.save(update_fields=['expires_at'])
+                    messages.info(request, f"Expiry date updated for {username}.")
+                else:
+                    # Also call grantAccess on blockchain if both users have wallets
                     if request.user.wallet_address and target.wallet_address:
                         try:
                             w3, contract = get_contract()
-                            expiry = int(
-                                (datetime.datetime.now() +
-                                 datetime.timedelta(days=365)).timestamp()
+                            expiry_ts    = int(expires_at.timestamp()) if expires_at else int(
+                                (timezone.now() + datetime.timedelta(days=365)).timestamp()
                             )
                             tx = contract.functions.grantAccess(
                                 file_obj.file_hash,
                                 target.wallet_address,
-                                expiry,
+                                expiry_ts,
                             ).build_transaction({
                                 'from':  request.user.wallet_address,
-                                'nonce': w3.eth.get_transaction_count(
-                                    request.user.wallet_address
-                                ),
-                                'gas': 200000,
+                                'nonce': w3.eth.get_transaction_count(request.user.wallet_address),
+                                'gas':   200000,
                             })
                             tx_hash = w3.eth.send_transaction(tx)
                             w3.eth.wait_for_transaction_receipt(tx_hash)
                         except Exception:
-                            pass  # Best-effort; DB share already saved
+                            pass
 
                     ActivityLog.objects.create(
-                        user=request.user, action='share',
-                        file_hash=file_obj.file_hash, success=True,
-                        ip_address=get_client_ip(request),
-                        details=f"Shared '{file_obj.filename}' with {username}",
+                        user=request.user, action='share', file_hash=file_obj.file_hash,
+                        success=True, ip_address=get_client_ip(request),
+                        details=f"Shared '{file_obj.filename}' with {username}"
+                                + (f" (expires {expires_at.strftime('%d %b %Y')})" if expires_at else ""),
                     )
-                    messages.success(request, f"✅ File shared with {username}!")
-                else:
-                    messages.warning(request, f"{username} already has access.")
+
+                    expiry_msg = f" — expires in {expiry_days} days" if expiry_days and expiry_days != '0' else " — no expiry"
+                    messages.success(request, f"✅ File shared with {username}{expiry_msg}!")
+
             except CustomUser.DoesNotExist:
                 messages.error(request, f"No user found with username '{username}'.")
 
         return redirect('share_file', file_id=file_id)
 
+    expiry_options = [
+        ('0',   'No Expiry'),
+        ('1',   '1 Day'),
+        ('3',   '3 Days'),
+        ('7',   '7 Days'),
+        ('14',  '14 Days'),
+        ('30',  '1 Month'),
+        ('90',  '3 Months'),
+        ('180', '6 Months'),
+        ('365', '1 Year'),
+    ]
     return render(request, 'files/share_file.html', {
         'file':           file_obj,
         'current_shares': current_shares,
+        'expiry_options': expiry_options,
     })
 
 
@@ -345,8 +341,8 @@ def shared_with_me(request):
 # ====================== BLOCKCHAIN VERIFY ======================
 @login_required
 def blockchain_verify(request):
-    result   = None
-    query    = ''
+    result    = None
+    query     = ''
     file_hash = ''
 
     if request.method == 'POST':
@@ -355,9 +351,7 @@ def blockchain_verify(request):
         query = request.GET.get('hash', '').strip()
 
     if query:
-        is_hash = len(query) == 64 and all(
-            c in '0123456789abcdefABCDEF' for c in query
-        )
+        is_hash = len(query) == 64 and all(c in '0123456789abcdefABCDEF' for c in query)
 
         if is_hash:
             file_hash = query.lower()
@@ -366,10 +360,7 @@ def blockchain_verify(request):
             except File.DoesNotExist:
                 db_file = None
         else:
-            db_results = File.objects.filter(
-                filename__icontains=query, owner=request.user
-            ).order_by('-upload_date')
-
+            db_results = File.objects.filter(filename__icontains=query, owner=request.user).order_by('-upload_date')
             if db_results.count() == 1:
                 db_file   = db_results.first()
                 file_hash = db_file.file_hash
@@ -403,13 +394,11 @@ def blockchain_verify(request):
                     }
                 else:
                     blockchain_error = (
-                        "Hash not found on blockchain. This usually means Ganache was "
-                        "restarted after the file was uploaded — blockchain state is "
-                        "wiped on restart. The file itself is safe on IPFS. "
-                        "Re-upload the file to re-register it on blockchain."
+                        "Hash not found on blockchain. Ganache may have been restarted. "
+                        "Run python redeploy_contract.py then re-upload the file."
                     )
             except ConnectionError:
-                blockchain_error = "Cannot connect to Ganache. Make sure it is running at http://127.0.0.1:7545"
+                blockchain_error = "Cannot connect to Ganache. Make sure it is running."
             except Exception as e:
                 blockchain_error = str(e)
 
@@ -419,10 +408,7 @@ def blockchain_verify(request):
             'db_file':          db_file,
             'blockchain_data':  blockchain_data,
             'blockchain_error': blockchain_error,
-            'verified': (
-                blockchain_data is not None and
-                blockchain_data.get('is_active', False)
-            ),
+            'verified': blockchain_data is not None and blockchain_data.get('is_active', False),
         }
 
     my_files_qs = File.objects.filter(owner=request.user).order_by('-upload_date')
