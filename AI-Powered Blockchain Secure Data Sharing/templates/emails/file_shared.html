@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Shared With You — SecureShare</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#050a0f; font-family:'Segoe UI',Arial,sans-serif; color:#c8dde8; }
+  .wrapper { max-width:600px; margin:0 auto; padding:32px 16px; }
+
+  .header {
+    background:linear-gradient(135deg,#0b1622,#0f1e2e);
+    border:1px solid #0f2d46;
+    border-radius:12px 12px 0 0;
+    padding:36px 40px 28px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .header::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,#00d4ff,transparent);
+  }
+  .logo-icon {
+    width:60px;height:60px;border-radius:14px;
+    background:rgba(0,212,255,0.08);
+    border:1px solid rgba(0,212,255,0.3);
+    display:inline-flex;align-items:center;justify-content:center;
+    margin-bottom:16px;font-size:28px;
+  }
+  .brand {
+    font-family:monospace;font-size:22px;letter-spacing:4px;
+    color:#00d4ff;text-shadow:0 0 20px rgba(0,212,255,0.4);
+    display:block;margin-bottom:6px;
+  }
+  .brand-sub {
+    font-family:monospace;font-size:10px;letter-spacing:3px;
+    color:#4a7a99;text-transform:uppercase;
+  }
+
+  .body {
+    background:#0b1622;
+    border-left:1px solid #0f2d46;
+    border-right:1px solid #0f2d46;
+    padding:36px 40px;
+  }
+
+  .greeting {
+    font-size:20px;font-weight:600;color:#c8dde8;margin-bottom:8px;
+  }
+  .subtitle {
+    font-size:14px;color:#4a7a99;margin-bottom:28px;line-height:1.6;
+  }
+
+  /* File card */
+  .file-card {
+    background:#0f1e2e;
+    border:1px solid #0f2d46;
+    border-radius:10px;
+    padding:24px;
+    margin-bottom:24px;
+    position:relative;
+    overflow:hidden;
+  }
+  .file-card::before {
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,#00d4ff,transparent);opacity:0.5;
+  }
+  .file-icon {
+    font-size:36px;display:block;margin-bottom:12px;
+  }
+  .file-name {
+    font-size:18px;font-weight:700;color:#c8dde8;margin-bottom:6px;word-break:break-all;
+  }
+  .file-meta {
+    font-family:monospace;font-size:11px;color:#4a7a99;letter-spacing:1px;
+    display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;
+  }
+  .meta-item { display:flex;align-items:center;gap:4px; }
+
+  /* Expiry badge */
+  .expiry-box {
+    border-radius:8px;padding:16px 20px;margin-bottom:24px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .expiry-never {
+    background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.25);
+  }
+  .expiry-timed {
+    background:rgba(255,165,2,0.08);border:1px solid rgba(255,165,2,0.25);
+  }
+  .expiry-icon { font-size:24px;flex-shrink:0; }
+  .expiry-title {
+    font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:3px;
+  }
+  .expiry-never .expiry-title { color:#2ed573; }
+  .expiry-timed .expiry-title { color:#ffa502; }
+  .expiry-text { font-size:13px;color:#c8dde8; }
+
+  /* CTA Button */
+  .cta-wrap { text-align:center;margin:28px 0; }
+  .cta-btn {
+    display:inline-block;
+    background:linear-gradient(135deg,#0077ff,#00d4ff);
+    color:#000 !important;font-weight:700;
+    font-family:monospace;font-size:13px;letter-spacing:2px;text-transform:uppercase;
+    text-decoration:none;
+    padding:14px 36px;border-radius:8px;
+    box-shadow:0 4px 20px rgba(0,212,255,0.25);
+  }
+
+  /* Info strip */
+  .info-strip {
+    display:flex;gap:0;margin-bottom:28px;
+    border:1px solid #0f2d46;border-radius:8px;overflow:hidden;
+  }
+  .info-item {
+    flex:1;padding:16px 12px;text-align:center;
+    border-right:1px solid #0f2d46;
+  }
+  .info-item:last-child { border-right:none; }
+  .info-item-icon { font-size:20px;display:block;margin-bottom:6px; }
+  .info-item-label {
+    font-family:monospace;font-size:9px;letter-spacing:1px;
+    color:#4a7a99;text-transform:uppercase;display:block;margin-bottom:3px;
+  }
+  .info-item-value { font-size:12px;color:#c8dde8;font-weight:600; }
+
+  /* Divider */
+  .divider {
+    border:none;border-top:1px solid #0f2d46;margin:24px 0;
+  }
+
+  .note {
+    font-size:12px;color:#4a7a99;line-height:1.7;
+    background:#050a0f;border-radius:6px;padding:14px 16px;
+    border-left:2px solid #0f2d46;
+  }
+
+  .footer {
+    background:#050a0f;
+    border:1px solid #0f2d46;border-top:none;
+    border-radius:0 0 12px 12px;
+    padding:20px 40px;text-align:center;
+  }
+  .footer p {
+    font-family:monospace;font-size:10px;color:#4a7a99;
+    letter-spacing:1px;line-height:1.8;
+  }
+  .footer a { color:#00d4ff;text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="logo-icon">⬡</div>
+    <span class="brand">SECURESHARE</span>
+    <span class="brand-sub">Blockchain · Encrypted · AI-Monitored</span>
+  </div>
+
+  <div class="body">
+
+    <div class="greeting">Hello, {{ recipient_name }}! 👋</div>
+    <p class="subtitle">
+      <strong style="color:#c8dde8;">{{ sender_name }}</strong> has shared an encrypted file with you
+      on SecureShare. Log in to access it securely.
+    </p>
+
+    <!-- File card -->
+    <div class="file-card">
+      <span class="file-icon">{{ file_icon }}</span>
+      <div class="file-name">{{ file_name }}</div>
+      <div class="file-meta">
+        <span class="meta-item">📦 {{ file_size }}</span>
+        <span class="meta-item">🔐 AES-256 Encrypted</span>
+        {% if storage_mode == 'ipfs' %}
+        <span class="meta-item">☁ Stored on IPFS</span>
+        {% else %}
+        <span class="meta-item">💾 Secure Storage</span>
+        {% endif %}
+        {% if blockchain_verified %}
+        <span class="meta-item">⛓ Blockchain Verified</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Expiry info -->
+    {% if expires_at %}
+    <div class="expiry-box expiry-timed">
+      <span class="expiry-icon">⏱</span>
+      <div>
+        <div class="expiry-title">Time-Limited Access</div>
+        <div class="expiry-text">
+          You have <strong style="color:#ffa502;">{{ expiry_display }}</strong> to access this file.
+          After <strong>{{ expires_at_formatted }}</strong>, the download link will expire automatically.
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="expiry-box expiry-never">
+      <span class="expiry-icon">✅</span>
+      <div>
+        <div class="expiry-title">Permanent Access</div>
+        <div class="expiry-text">
+          This file has been shared with you permanently — no expiry date.
+          The owner can revoke access at any time.
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Info strip -->
+    <div class="info-strip">
+      <div class="info-item">
+        <span class="info-item-icon">👤</span>
+        <span class="info-item-label">Shared by</span>
+        <span class="info-item-value">{{ sender_name }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-item-icon">📅</span>
+        <span class="info-item-label">Shared on</span>
+        <span class="info-item-value">{{ shared_at }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-item-icon">⏰</span>
+        <span class="info-item-label">Expires</span>
+        <span class="info-item-value">{% if expires_at %}{{ expires_at_formatted }}{% else %}Never{% endif %}</span>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-wrap">
+      <a href="{{ login_url }}" class="cta-btn">→ Access My Files</a>
+    </div>
+
+    <hr class="divider">
+
+    <div class="note">
+      <strong style="color:#c8dde8;">🔒 Security Note:</strong> SecureShare never stores your files
+      unencrypted. All files are encrypted with AES-256 before storage and can only be decrypted
+      when you download them. If you did not expect this share, you can ignore this email — no
+      action is required on your part.
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <p>
+      This email was sent by SecureShare on behalf of {{ sender_name }}.<br>
+      <a href="{{ login_url }}">Log in to SecureShare</a> &nbsp;·&nbsp;
+      Blockchain · AES-256 · AI-Monitored<br>
+      <span style="color:#1a3a4a;">© SecureShare · Powered by Ethereum &amp; IPFS</span>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

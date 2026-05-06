@@ -11,6 +11,7 @@ from .encryption_utils import generate_file_hash, encrypt_file, save_encrypted_f
 from .models import File, FileShare
 from .ipfs_utils import upload_to_ipfs, download_from_ipfs, unpin_from_ipfs, is_pinata_configured
 from blockchain.contract_interaction import get_contract
+from .email_utils import send_file_shared_email
 from users.models import ActivityLog, CustomUser
 
 
@@ -303,8 +304,12 @@ def share_file(request, file_id):
                                 + (f" (expires {expires_at.strftime('%d %b %Y')})" if expires_at else ""),
                     )
 
+                    # Send email notification to recipient
+                    email_sent = send_file_shared_email(share)
+
                     expiry_msg = f" — expires in {expiry_days} days" if expiry_days and expiry_days != '0' else " — no expiry"
-                    messages.success(request, f"✅ File shared with {username}{expiry_msg}!")
+                    email_note = " · Email notification sent ✉" if email_sent else ""
+                    messages.success(request, f"✅ File shared with {username}{expiry_msg}{email_note}!")
 
             except CustomUser.DoesNotExist:
                 messages.error(request, f"No user found with username '{username}'.")

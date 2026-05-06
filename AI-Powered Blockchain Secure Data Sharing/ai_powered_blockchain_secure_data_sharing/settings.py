@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR   = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
-DEBUG = True
+DEBUG      = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -39,7 +39,7 @@ ROOT_URLCONF = 'ai_powered_blockchain_secure_data_sharing.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS':    [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -57,7 +57,7 @@ WSGI_APPLICATION = 'ai_powered_blockchain_secure_data_sharing.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME':   BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -69,20 +69,29 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE     = 'UTC'
+USE_I18N      = True
+USE_TZ        = True
 
 STATIC_URL = 'static/'
 MEDIA_URL  = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_TEMPLATE_PACK          = "bootstrap5"
 
-AUTH_USER_MODEL = 'users.CustomUser'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AUTH_USER_MODEL        = 'users.CustomUser'
+DEFAULT_AUTO_FIELD     = 'django.db.models.BigAutoField'
 
 LOGIN_URL           = '/accounts/login/'
 LOGIN_REDIRECT_URL  = '/upload/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# ── Email Configuration (Gmail SMTP) ──────────────────────────────────────────
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL  = f"SecureShare <{os.getenv('EMAIL_HOST_USER', 'noreply@secureshare.com')}>"
