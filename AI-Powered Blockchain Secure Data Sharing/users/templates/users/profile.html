@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Profile — SecureShare{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// My Profile</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">ACCOUNT SETTINGS · SECURITY · BLOCKCHAIN IDENTITY</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="ss-grid ss-grid-4 mb-5">
+    <div class="ss-stat"><span class="ss-stat-icon text-accent"><i class="bi bi-file-earmark-lock"></i></span><div class="ss-stat-value">{{ total_files }}</div><div class="ss-stat-label">Your Files</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:#a78bfa;"><i class="bi bi-share"></i></span><div class="ss-stat-value" style="color:#a78bfa;">{{ total_shared }}</div><div class="ss-stat-label">Files Shared</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-people"></i></span><div class="ss-stat-value" style="color:var(--success);">{{ total_received }}</div><div class="ss-stat-label">Received Shares</div></div>
+    <div class="ss-stat"><span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-box-arrow-in-right"></i></span><div class="ss-stat-value" style="color:var(--warning);">{{ total_logins }}</div><div class="ss-stat-label">Total Logins</div></div>
+</div>
+
+<!-- System status -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;{% if ganache_connected %}background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.2);{% else %}background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);{% endif %}">
+        <span style="width:7px;height:7px;border-radius:50%;background:{% if ganache_connected %}var(--success){% else %}var(--danger){% endif %};"></span>
+        <span class="mono" style="font-size:11px;color:{% if ganache_connected %}var(--success){% else %}var(--danger){% endif %};">GANACHE {% if ganache_connected %}ONLINE{% else %}OFFLINE{% endif %}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;{% if ipfs_enabled %}background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);{% else %}background:rgba(74,122,153,0.08);border:1px solid var(--border);{% endif %}">
+        <span style="width:7px;height:7px;border-radius:50%;background:{% if ipfs_enabled %}var(--accent){% else %}var(--text-dim){% endif %};"></span>
+        <span class="mono" style="font-size:11px;color:{% if ipfs_enabled %}var(--accent){% else %}var(--text-dim){% endif %};">IPFS/PINATA {% if ipfs_enabled %}ENABLED{% else %}NOT CONFIGURED{% endif %}</span>
+    </div>
+</div>
+
+<div class="ss-grid ss-grid-2" style="gap:24px;">
+
+    <!-- Identity + Password -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+        <div class="ss-card">
+            <div class="ss-card-header"><i class="bi bi-person-badge"></i> Identity</div>
+            <div class="ss-card-body">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+                    <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;color:var(--accent);flex-shrink:0;">{{ user.username|slice:":2"|upper }}</div>
+                    <div>
+                        <div style="font-size:18px;font-weight:700;">{{ user.username }}</div>
+                        <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">MEMBER SINCE {{ user.date_joined|date:"d M Y" }}</div>
+                    </div>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}<input type="hidden" name="action" value="update_email">
+                    <label class="ss-label">Email Address</label>
+                    <input type="email" name="email" class="ss-input" value="{{ user.email }}" required style="margin-bottom:16px;">
+                    <button type="submit" class="ss-btn ss-btn-primary w-100"><i class="bi bi-envelope"></i> Update Email</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="ss-card">
+            <div class="ss-card-header"><i class="bi bi-key"></i> Change Password</div>
+            <div class="ss-card-body">
+                <form method="POST">
+                    {% csrf_token %}<input type="hidden" name="action" value="change_password">
+                    <label class="ss-label">Current Password</label>
+                    <input type="password" name="old_password" class="ss-input" required style="margin-bottom:12px;">
+                    <label class="ss-label">New Password</label>
+                    <input type="password" name="new_password1" class="ss-input" required style="margin-bottom:12px;">
+                    <label class="ss-label">Confirm New Password</label>
+                    <input type="password" name="new_password2" class="ss-input" required style="margin-bottom:16px;">
+                    <button type="submit" class="ss-btn w-100" style="border-color:rgba(124,58,237,0.4);color:#a78bfa;"><i class="bi bi-lock"></i> Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blockchain Wallet (read-only — auto assigned) -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+        <div class="ss-card">
+            <div class="ss-card-header">
+                <i class="bi bi-wallet2"></i> Blockchain Wallet
+                {% if user.wallet_address %}<span class="ss-badge ss-badge-success" style="margin-left:8px;">AUTO-ASSIGNED</span>
+                {% else %}<span class="ss-badge ss-badge-warning" style="margin-left:8px;">NOT ASSIGNED</span>{% endif %}
+            </div>
+            <div class="ss-card-body">
+                {% if user.wallet_address %}
+                <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:20px;margin-bottom:20px;">
+                    <div class="mono text-dim" style="font-size:10px;letter-spacing:2px;margin-bottom:8px;">YOUR WALLET ADDRESS</div>
+                    <div class="mono text-accent" style="font-size:13px;word-break:break-all;line-height:1.8;">{{ user.wallet_address }}</div>
+                    {% if wallet_balance is not None %}
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.1);">
+                        <span class="ss-badge ss-badge-info">{{ wallet_balance }} ETH</span>
+                        <span class="mono text-dim" style="font-size:10px;margin-left:8px;">Ganache test network</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="background:rgba(46,213,115,0.05);border:1px solid rgba(46,213,115,0.15);border-radius:6px;padding:14px;">
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <i class="bi bi-check-circle-fill" style="color:var(--success);margin-top:2px;flex-shrink:0;"></i>
+                        <div class="text-dim" style="font-size:13px;">This wallet was automatically assigned to your account. Every file you upload is signed with this address on the blockchain — proving you are the owner.</div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:40px 20px;">
+                    <i class="bi bi-wallet2" style="font-size:40px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+                    <div class="mono text-dim" style="font-size:11px;letter-spacing:2px;margin-bottom:8px;">NO WALLET ASSIGNED</div>
+                    <div class="text-dim" style="font-size:13px;">Start Ganache then log out and back in — a wallet will be assigned automatically.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="ss-card">
+            <div class="ss-card-header"><i class="bi bi-info-circle"></i> How It Works</div>
+            <div class="ss-card-body" style="display:flex;flex-direction:column;gap:16px;">
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">🔐</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">AUTO WALLET ASSIGNMENT</div><div class="text-dim" style="font-size:13px;">When you registered, the system automatically assigned you a unique Ganache account. No two users share the same wallet.</div></div>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">⛓</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">BLOCKCHAIN OWNERSHIP</div><div class="text-dim" style="font-size:13px;">Every file you upload is registered on the blockchain under your wallet address — cryptographic proof that you own it.</div></div>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <span style="font-size:20px;flex-shrink:0;">☁</span>
+                    <div><div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">IPFS STORAGE</div><div class="text-dim" style="font-size:13px;">Your encrypted files are stored on IPFS — a global decentralized network. They remain accessible even if this server goes offline.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

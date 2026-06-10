@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}AI Monitor — SecureShare{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <div class="ss-section-title">// AI Security Monitor</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
+            ISOLATION FOREST · LAST 30 DAYS · USER: {{ user.username|upper }}
+        </p>
+    </div>
+    <span class="ss-badge ss-badge-success" style="font-size:11px;padding:6px 14px;">
+        <i class="bi bi-circle-fill" style="font-size:7px;margin-right:4px;"></i> SYSTEM ACTIVE
+    </span>
+</div>
+
+<!-- Stats grid -->
+<div class="row mb-5">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="ss-stat">
+            <span class="ss-stat-icon text-accent"><i class="bi bi-cloud-upload"></i></span>
+            <div class="ss-stat-value">{{ total_uploads }}</div>
+            <div class="ss-stat-label">Your Uploads</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="ss-stat">
+            <span class="ss-stat-icon" style="color:var(--success);"><i class="bi bi-download"></i></span>
+            <div class="ss-stat-value" style="color:var(--success);">{{ total_downloads }}</div>
+            <div class="ss-stat-label">Your Downloads</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="ss-stat">
+            <span class="ss-stat-icon" style="color:var(--danger);"><i class="bi bi-x-circle"></i></span>
+            <div class="ss-stat-value" style="color:var(--danger);">{{ total_failed_logins }}</div>
+            <div class="ss-stat-label">Failed Logins</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="ss-stat">
+            <span class="ss-stat-icon" style="color:var(--warning);"><i class="bi bi-robot"></i></span>
+            <div class="ss-stat-value" style="color:var(--warning);">{{ total_anomalies }}</div>
+            <div class="ss-stat-label">Anomalies Detected</div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Anomaly Alerts -->
+<div class="ss-card mb-5">
+    <div class="ss-card-header">
+        <i class="bi bi-cpu"></i>
+        AI Anomaly Alerts
+        {% if anomalies %}
+        <span class="ss-badge ss-badge-warning ms-2" style="margin-left:8px;">{{ anomalies|length }}</span>
+        {% endif %}
+    </div>
+    <div class="ss-card-body">
+        {% if anomalies %}
+            {% for anomaly in anomalies %}
+            <div class="ss-anomaly-row {% if anomaly.bootstrap_class == 'danger' %}ss-anomaly-danger{% elif anomaly.bootstrap_class == 'warning' %}ss-anomaly-warning{% else %}ss-anomaly-info{% endif %}">
+                <i class="bi bi-shield-exclamation ss-anomaly-icon {% if anomaly.bootstrap_class == 'danger' %}text-danger{% elif anomaly.bootstrap_class == 'warning' %}text-warning{% else %}text-accent{% endif %}"></i>
+                <div style="flex:1;">
+                    <div style="font-size:14px;font-weight:600;">{{ anomaly.description }}</div>
+                    {% if anomaly.time %}
+                    <div class="text-dim mono" style="font-size:11px;margin-top:4px;">{{ anomaly.time }}</div>
+                    {% endif %}
+                </div>
+                <span class="ss-badge
+                    {% if anomaly.bootstrap_class == 'danger' %}ss-badge-danger
+                    {% elif anomaly.bootstrap_class == 'warning' %}ss-badge-warning
+                    {% else %}ss-badge-info{% endif %}">
+                    {{ anomaly.severity|upper|default:'MEDIUM' }}
+                </span>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div style="text-align:center;padding:40px 0;">
+            <i class="bi bi-check-circle" style="font-size:40px;color:var(--success);display:block;margin-bottom:12px;"></i>
+            <div style="font-family:var(--mono);font-size:13px;color:var(--success);">NO ANOMALIES DETECTED</div>
+            <div class="text-dim mono mt-2" style="font-size:11px;">All recent activity appears normal</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Activity Log -->
+<div class="ss-card">
+    <div class="ss-card-header">
+        <i class="bi bi-list-ul"></i>
+        Your Recent Activity Log
+        <span class="text-dim mono" style="margin-left:auto;font-size:10px;">Last 50 events</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Timestamp</th>
+                    <th>IP Address</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in user_logs %}
+                <tr>
+                    <td>
+                        <span class="mono" style="font-size:13px;">
+                            {% if log.action == 'upload' %}<i class="bi bi-upload me-2 text-accent"></i>
+                            {% elif log.action == 'download' %}<i class="bi bi-download me-2" style="color:var(--success);"></i>
+                            {% elif log.action == 'delete' %}<i class="bi bi-trash me-2" style="color:var(--danger);"></i>
+                            {% elif log.action == 'login' %}<i class="bi bi-box-arrow-in-right me-2" style="color:var(--warning);"></i>
+                            {% elif log.action == 'failed_login' %}<i class="bi bi-x-circle me-2" style="color:var(--danger);"></i>
+                            {% else %}<i class="bi bi-activity me-2 text-dim"></i>{% endif %}
+                            {{ log.action|upper }}
+                        </span>
+                    </td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ log.timestamp|date:"d M Y · H:i" }}</td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ log.ip_address|default:"—" }}</td>
+                    <td>
+                        {% if log.success %}
+                            <span class="ss-badge ss-badge-success">OK</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-danger">FAILED</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-dim" style="font-size:13px;">{{ log.details|default:"—"|truncatechars:40 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:40px;color:var(--text-dim);font-family:var(--mono);font-size:12px;">
+                        No activity recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);text-align:center;">
+        <span class="text-dim mono" style="font-size:10px;letter-spacing:1px;">
+            AI MODEL: ISOLATION FOREST &nbsp;·&nbsp; CONTAMINATION: 15% &nbsp;·&nbsp; UPDATED: REAL-TIME
+        </span>
+    </div>
+</div>
+
+{% endblock %}

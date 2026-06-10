@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureShare{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg:       #050a0f;
+            --surface:  #0b1622;
+            --surface2: #0f1e2e;
+            --border:   #0f2d46;
+            --accent:   #00d4ff;
+            --accent2:  #0077ff;
+            --accent3:  #7c3aed;
+            --danger:   #ff4757;
+            --success:  #2ed573;
+            --warning:  #ffa502;
+            --text:     #c8dde8;
+            --text-dim: #4a7a99;
+            --mono:     'Share Tech Mono', monospace;
+            --sans:     'Rajdhani', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 15px;
+            min-height: 100vh;
+        }
+
+        /* ── Animated grid ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridScroll 25s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridScroll { to { background-position: 0 40px; } }
+
+        /* ── Navbar ── */
+        .ss-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(5,10,15,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            height: 60px;
+            gap: 8px;
+        }
+
+        .ss-brand {
+            font-family: var(--mono);
+            font-size: 16px;
+            letter-spacing: 3px;
+            color: var(--accent);
+            text-decoration: none;
+            text-shadow: 0 0 16px rgba(0,212,255,0.4);
+            margin-right: 24px;
+            white-space: nowrap;
+        }
+
+        .ss-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .ss-nav-link {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .ss-nav-link:hover {
+            color: var(--accent);
+            border-color: var(--border);
+            background: rgba(0,212,255,0.05);
+        }
+
+        .ss-nav-link.active {
+            color: var(--accent);
+            border-color: rgba(0,212,255,0.3);
+            background: rgba(0,212,255,0.08);
+        }
+
+        .ss-nav-link i { font-size: 13px; }
+
+        .ss-nav-user {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .ss-logout {
+            color: var(--danger) !important;
+            border-color: rgba(255,71,87,0.2) !important;
+        }
+        .ss-logout:hover {
+            background: rgba(255,71,87,0.08) !important;
+        }
+
+        /* ── Main content wrapper ── */
+        .ss-content {
+            position: relative;
+            z-index: 1;
+            padding: 32px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ── Alert messages ── */
+        .ss-alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ss-alert-success { background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: var(--success); }
+        .ss-alert-error,
+        .ss-alert-danger   { background: rgba(255,71,87,0.1);  border: 1px solid rgba(255,71,87,0.3);  color: var(--danger); }
+        .ss-alert-warning  { background: rgba(255,165,2,0.1);  border: 1px solid rgba(255,165,2,0.3);  color: var(--warning); }
+        .ss-alert-info     { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);  color: var(--accent); }
+
+        /* ── Cards ── */
+        .ss-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ss-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.4;
+        }
+
+        .ss-card-body { padding: 24px; }
+        .ss-card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Stat cards ── */
+        .ss-stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .ss-stat:hover { border-color: rgba(0,212,255,0.3); }
+        .ss-stat-value {
+            font-family: var(--mono);
+            font-size: 36px;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(0,212,255,0.3);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .ss-stat-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+        .ss-stat-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* ── Buttons ── */
+        .ss-btn {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .ss-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.05); }
+
+        .ss-btn-primary {
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            border-color: transparent;
+            color: #000;
+            font-weight: 700;
+        }
+        .ss-btn-primary:hover { opacity: 0.88; color: #000; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,255,0.25); }
+
+        .ss-btn-danger { border-color: rgba(255,71,87,0.3); color: var(--danger); }
+        .ss-btn-danger:hover { background: rgba(255,71,87,0.1); border-color: var(--danger); }
+
+        .ss-btn-success { border-color: rgba(46,213,115,0.3); color: var(--success); }
+        .ss-btn-success:hover { background: rgba(46,213,115,0.1); border-color: var(--success); }
+
+        .ss-btn-purple { border-color: rgba(124,58,237,0.3); color: #a78bfa; }
+        .ss-btn-purple:hover { background: rgba(124,58,237,0.1); border-color: var(--accent3); }
+
+        .ss-btn-sm { padding: 6px 12px; font-size: 10px; }
+
+        /* ── Table ── */
+        .ss-table { width: 100%; border-collapse: collapse; }
+        .ss-table th {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+        .ss-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(15,45,70,0.5);
+            font-size: 14px;
+            color: var(--text);
+            vertical-align: middle;
+        }
+        .ss-table tr:last-child td { border-bottom: none; }
+        .ss-table tr:hover td { background: rgba(0,212,255,0.03); }
+
+        /* ── Badges ── */
+        .ss-badge {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        .ss-badge-success { background: rgba(46,213,115,0.15); color: var(--success); border: 1px solid rgba(46,213,115,0.3); }
+        .ss-badge-danger  { background: rgba(255,71,87,0.15);  color: var(--danger);  border: 1px solid rgba(255,71,87,0.3); }
+        .ss-badge-info    { background: rgba(0,212,255,0.1);   color: var(--accent);  border: 1px solid rgba(0,212,255,0.25); }
+        .ss-badge-warning { background: rgba(255,165,2,0.15);  color: var(--warning); border: 1px solid rgba(255,165,2,0.3); }
+        .ss-badge-gray    { background: rgba(74,122,153,0.15); color: var(--text-dim);border: 1px solid var(--border); }
+
+        /* ── Form inputs ── */
+        .ss-input {
+            width: 100%;
+            background: rgba(0,212,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .ss-input:focus { border-color: var(--accent); background: rgba(0,212,255,0.06); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+        .ss-input::placeholder { color: var(--text-dim); }
+
+        .ss-label {
+            display: block;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        /* ── Section titles ── */
+        .ss-section-title {
+            font-family: var(--mono);
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ss-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── Utility ── */
+        .mono { font-family: var(--mono); }
+        .text-accent { color: var(--accent); }
+        .text-dim { color: var(--text-dim); }
+        .text-success { color: var(--success) !important; }
+        .text-danger { color: var(--danger) !important; }
+        .text-warning { color: var(--warning) !important; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .d-flex { display: flex; }
+        .align-center { align-items: center; }
+        .flex-wrap { flex-wrap: wrap; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .w-100 { width: 100%; }
+        .mt-2 { margin-top: 8px; }
+        .mt-3 { margin-top: 12px; }
+        .mt-4 { margin-top: 16px; }
+        .mt-5 { margin-top: 24px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-5 { margin-bottom: 24px; }
+        .me-2 { margin-right: 8px; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .ss-grid { display: grid; gap: 16px; }
+        .ss-grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .ss-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .ss-grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+        @media (max-width: 900px) {
+            .ss-grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .ss-grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .ss-grid-4, .ss-grid-3, .ss-grid-2 { grid-template-columns: 1fr; }
+            .ss-nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="ss-nav">
+    <a class="ss-brand" href="{% url 'dashboard' %}">⬡ SECURESHARE</a>
+
+    <div class="ss-nav-links">
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+           href="{% url 'dashboard' %}">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'upload_file' %}active{% endif %}"
+           href="{% url 'upload_file' %}">
+            <i class="bi bi-cloud-upload"></i> Upload
+        </a>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'my_files' %}active{% endif %}"
+           href="{% url 'my_files' %}">
+            <i class="bi bi-folder2"></i> My Files
+        </a>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'shared_with_me' %}active{% endif %}"
+           href="{% url 'shared_with_me' %}">
+            <i class="bi bi-people"></i> Shared
+        </a>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'blockchain_verify' %}active{% endif %}"
+           href="{% url 'blockchain_verify' %}">
+            <i class="bi bi-link-45deg"></i> Blockchain
+        </a>
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'ai_monitor' %}active{% endif %}"
+           href="{% url 'ai_monitor' %}">
+            <i class="bi bi-robot"></i> AI Monitor
+        </a>
+        {% if user.is_superuser %}
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+           href="{% url 'admin_dashboard' %}" style="color:var(--warning);">
+            <i class="bi bi-shield-lock"></i> Admin
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="ss-nav-user">
+        <a class="ss-nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+           href="{% url 'profile' %}" style="color:var(--text-dim);">
+            <i class="bi bi-person-circle"></i> {{ user.username }}
+        </a>
+        <a class="ss-nav-link ss-logout" href="{% url 'logout' %}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+    </div>
+</nav>
+{% endif %}
+
+<div class="ss-content">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="ss-alert ss-alert-{{ message.tags }}">
+                {% if message.tags == 'success' %}<i class="bi bi-check-circle"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-exclamation-circle"></i>
+                {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle"></i>
+                {% else %}<i class="bi bi-info-circle"></i>{% endif %}
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

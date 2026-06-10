@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Shared With Me — SecureShare{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// Shared With Me</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">FILES OTHER USERS HAVE SHARED WITH YOU</p>
+    </div>
+</div>
+
+{% if shares %}
+<div class="ss-card">
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Shared By</th>
+                    <th>Shared On</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for share in shares %}
+                <tr style="{% if share.is_expired %}opacity:0.55;{% endif %}">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:20px;">
+                                {% with n=share.file.filename|lower %}
+                                {% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n or '.jpeg' in n %}🖼️{% elif '.mp4' in n or '.mov' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n %}📦{% else %}📄{% endif %}
+                                {% endwith %}
+                            </span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">{{ share.file.filename }}</div>
+                                <div class="mono text-dim" style="font-size:10px;">
+                                    {{ share.file.file_size_display }} &nbsp;·&nbsp;
+                                    {{ share.file.file_hash|slice:":12" }}…
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="width:28px;height:28px;border-radius:50%;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:#a78bfa;">{{ share.shared_by.username|slice:":2"|upper }}</div>
+                            <span style="font-size:14px;">{{ share.shared_by.username }}</span>
+                        </div>
+                    </td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ share.shared_at|date:"d M Y" }}<br><span style="font-size:10px;">{{ share.shared_at|date:"H:i" }}</span></td>
+                    <td>
+                        {% if share.expires_at %}
+                            {% if share.is_expired %}
+                                <span class="ss-badge ss-badge-danger">
+                                    <i class="bi bi-clock-history"></i> Expired
+                                </span>
+                            {% else %}
+                                <div>
+                                    <span class="ss-badge ss-badge-warning">{{ share.expiry_display }}</span>
+                                    <div class="mono text-dim" style="font-size:9px;margin-top:3px;">{{ share.expires_at|date:"d M Y" }}</div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <span class="ss-badge ss-badge-success">Never expires</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if share.is_expired %}
+                            <span class="ss-badge ss-badge-danger">EXPIRED</span>
+                        {% elif share.can_download %}
+                            <span class="ss-badge ss-badge-success">ACTIVE</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-gray">No Download</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            {% if share.can_download and not share.is_expired %}
+                                <a href="{% url 'download_shared_file' share.file.id %}"
+                                   class="ss-btn ss-btn-sm ss-btn-success">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            {% else %}
+                                <span class="mono text-dim" style="font-size:11px;">
+                                    {% if share.is_expired %}Access expired{% else %}No download{% endif %}
+                                </span>
+                            {% endif %}
+                            <a href="{% url 'blockchain_verify' %}?hash={{ share.file.file_hash }}"
+                               class="ss-btn ss-btn-sm" title="Verify on blockchain">
+                                <i class="bi bi-link-45deg"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary -->
+<div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;">
+    <span class="mono text-dim" style="font-size:11px;">
+        Total: {{ shares|length }} &nbsp;·&nbsp;
+        Active: {% with active=0 %}{% for s in shares %}{% if not s.is_expired %}{% with active=active|add:1 %}{% endwith %}{% endif %}{% endfor %}{{ shares|length }}{% endwith %} &nbsp;·&nbsp;
+    </span>
+    <span class="mono text-dim" style="font-size:11px;">
+        <i class="bi bi-info-circle"></i> Expired files are shown but cannot be downloaded. Ask the owner to re-share.
+    </span>
+</div>
+
+{% else %}
+<div class="ss-card">
+    <div class="ss-card-body" style="text-align:center;padding:80px 24px;">
+        <i class="bi bi-people" style="font-size:56px;color:var(--text-dim);display:block;margin-bottom:16px;"></i>
+        <div class="mono" style="font-size:14px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px;">NOTHING SHARED WITH YOU YET</div>
+        <div class="text-dim" style="font-size:13px;">When another user shares a file with you, it will appear here.</div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

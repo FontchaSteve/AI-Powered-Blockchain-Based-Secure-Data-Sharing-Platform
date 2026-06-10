@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Upload File — SecureShare{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// Upload Secure File</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">
+            AES-256 ENCRYPTION · SHA-256 HASH · BLOCKCHAIN REGISTRATION
+        </p>
+    </div>
+    <a href="{% url 'my_files' %}" class="ss-btn">
+        <i class="bi bi-folder2"></i> My Files
+    </a>
+</div>
+
+<div style="max-width:680px;margin:0 auto;">
+    <div class="ss-card">
+        <div class="ss-card-body" style="padding:40px;">
+
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+
+                <!-- Drop Zone -->
+                <div id="dropZone" style="
+                    border:1px dashed rgba(0,212,255,0.3);
+                    border-radius:10px;
+                    padding:48px 24px;
+                    text-align:center;
+                    cursor:pointer;
+                    background:rgba(0,212,255,0.02);
+                    transition:all 0.25s;
+                    margin-bottom:28px;
+                    position:relative;
+                ">
+                    <!-- Hidden file input -->
+                    {{ form.file }}
+
+                    <i class="bi bi-cloud-upload" id="dropIcon" style="font-size:48px;color:var(--text-dim);display:block;margin-bottom:16px;transition:all 0.25s;"></i>
+
+                    <div id="dropText" style="font-family:var(--mono);font-size:13px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px;">
+                        DROP FILE HERE
+                    </div>
+                    <div class="text-dim" style="font-size:13px;">or <span style="color:var(--accent);text-decoration:underline;cursor:pointer;" onclick="document.querySelector('input[type=file]').click()">browse to select</span></div>
+
+                    <div id="fileChosen" style="display:none;margin-top:16px;">
+                        <div style="
+                            background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.25);
+                            border-radius:6px;padding:12px 16px;display:inline-flex;
+                            align-items:center;gap:10px;
+                        ">
+                            <i class="bi bi-file-earmark-check" style="color:var(--success);font-size:18px;"></i>
+                            <span id="fileName" class="mono" style="font-size:13px;color:var(--success);"></span>
+                            <span id="fileSize" class="mono text-dim" style="font-size:11px;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- What happens section -->
+                <div style="
+                    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+                    margin-bottom:28px;
+                ">
+                    <div style="
+                        text-align:center;padding:14px 8px;
+                        background:rgba(0,212,255,0.04);border:1px solid var(--border);border-radius:8px;
+                    ">
+                        <i class="bi bi-lock" style="color:var(--accent);font-size:20px;display:block;margin-bottom:6px;"></i>
+                        <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">AES-256</div>
+                        <div style="font-size:12px;">Encrypted</div>
+                    </div>
+                    <div style="
+                        text-align:center;padding:14px 8px;
+                        background:rgba(0,212,255,0.04);border:1px solid var(--border);border-radius:8px;
+                    ">
+                        <i class="bi bi-hash" style="color:var(--accent);font-size:20px;display:block;margin-bottom:6px;"></i>
+                        <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">SHA-256</div>
+                        <div style="font-size:12px;">Hashed</div>
+                    </div>
+                    <div style="
+                        text-align:center;padding:14px 8px;
+                        background:rgba(0,212,255,0.04);border:1px solid var(--border);border-radius:8px;
+                    ">
+                        <i class="bi bi-link-45deg" style="color:var(--accent);font-size:20px;display:block;margin-bottom:6px;"></i>
+                        <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">GANACHE</div>
+                        <div style="font-size:12px;">On-Chain</div>
+                    </div>
+                </div>
+
+                <!-- Upload progress (hidden until submit) -->
+                <div id="progressWrap" style="display:none;margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span class="mono text-dim" style="font-size:11px;letter-spacing:1px;" id="progressLabel">ENCRYPTING…</span>
+                        <span class="mono text-accent" style="font-size:11px;" id="progressPct">0%</span>
+                    </div>
+                    <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden;">
+                        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <button type="submit" id="uploadBtn" class="ss-btn ss-btn-primary w-100" style="padding:14px;font-size:13px;">
+                    <i class="bi bi-cloud-upload"></i> Encrypt & Upload to Blockchain
+                </button>
+
+                <div class="text-dim mono" style="text-align:center;font-size:10px;letter-spacing:1px;margin-top:16px;">
+                    MAX FILE SIZE: 50 MB · ALL FILE TYPES ACCEPTED
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Override Django's file input to be invisible — drop zone handles it */
+input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+#dropZone.drag-over {
+    border-color: var(--accent) !important;
+    background: rgba(0,212,255,0.07) !important;
+}
+#dropZone.drag-over #dropIcon { color: var(--accent) !important; transform: scale(1.1); }
+</style>
+
+<script>
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.querySelector('input[type="file"]');
+const uploadBtn = document.getElementById('uploadBtn');
+const form      = document.getElementById('uploadForm');
+
+function showFile(file) {
+    document.getElementById('fileName').textContent = file.name;
+    const mb = (file.size / 1024 / 1024).toFixed(2);
+    document.getElementById('fileSize').textContent = `(${mb} MB)`;
+    document.getElementById('fileChosen').style.display = 'block';
+    document.getElementById('dropText').textContent = 'FILE SELECTED';
+    document.getElementById('dropIcon').style.color = 'var(--success)';
+}
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) showFile(fileInput.files[0]);
+});
+
+dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) {
+        // Assign dropped file to the input
+        const dt = new DataTransfer();
+        dt.items.add(e.dataTransfer.files[0]);
+        fileInput.files = dt.files;
+        showFile(e.dataTransfer.files[0]);
+    }
+});
+
+// Animated progress on submit
+form.addEventListener('submit', function(e) {
+    if (!fileInput.files[0]) {
+        e.preventDefault();
+        alert('Please select a file first.');
+        return;
+    }
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #000;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Processing…';
+
+    const wrap     = document.getElementById('progressWrap');
+    const bar      = document.getElementById('progressBar');
+    const pct      = document.getElementById('progressPct');
+    const lbl      = document.getElementById('progressLabel');
+    wrap.style.display = 'block';
+
+    const steps = [
+        { pct: 20, label: 'HASHING FILE…' },
+        { pct: 45, label: 'ENCRYPTING (AES-256)…' },
+        { pct: 70, label: 'SAVING TO DISK…' },
+        { pct: 88, label: 'REGISTERING ON BLOCKCHAIN…' },
+        { pct: 100, label: 'COMPLETE' },
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < steps.length) {
+            bar.style.width = steps[i].pct + '%';
+            pct.textContent = steps[i].pct + '%';
+            lbl.textContent = steps[i].label;
+            i++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 600);
+});
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+{% endblock %}

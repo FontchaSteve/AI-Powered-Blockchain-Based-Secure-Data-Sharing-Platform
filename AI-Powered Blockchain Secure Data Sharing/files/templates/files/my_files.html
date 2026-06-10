@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}My Files — SecureShare{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// My Secure Files</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">{{ files|length }} FILE{% if files|length != 1 %}S{% endif %} · AES-256 ENCRYPTED</p>
+    </div>
+    <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary"><i class="bi bi-cloud-upload"></i> Upload New File</a>
+</div>
+
+<!-- Search & Filter -->
+<div class="ss-card mb-4">
+    <div class="ss-card-body" style="padding:16px 24px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:200px;">
+                <label class="ss-label">Search files</label>
+                <div style="position:relative;">
+                    <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;"></i>
+                    <input type="text" id="searchInput" class="ss-input" placeholder="filename..." style="padding-left:36px;" oninput="filterFiles()">
+                </div>
+            </div>
+            <div style="min-width:150px;">
+                <label class="ss-label">File type</label>
+                <select id="typeFilter" class="ss-input" onchange="filterFiles()">
+                    <option value="">All types</option>
+                    <option value="pdf">PDF</option>
+                    <option value="img">Images</option>
+                    <option value="vid">Videos</option>
+                    <option value="doc">Word docs</option>
+                    <option value="xls">Spreadsheets</option>
+                    <option value="zip">Archives</option>
+                    <option value="txt">Text</option>
+                </select>
+            </div>
+            <div style="min-width:140px;">
+                <label class="ss-label">Sort by</label>
+                <select id="sortBy" class="ss-input" onchange="filterFiles()">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="name">Name A→Z</option>
+                    <option value="name_desc">Name Z→A</option>
+                </select>
+            </div>
+            <div style="min-width:130px;">
+                <label class="ss-label">Storage</label>
+                <select id="storageFilter" class="ss-input" onchange="filterFiles()">
+                    <option value="">All</option>
+                    <option value="ipfs">IPFS only</option>
+                    <option value="local">Local only</option>
+                </select>
+            </div>
+            <button class="ss-btn ss-btn-sm" onclick="clearFilters()" style="align-self:flex-end;height:40px;"><i class="bi bi-x"></i> Clear</button>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-between align-center mb-3">
+    <span class="text-dim mono" id="resultsCount" style="font-size:11px;letter-spacing:1px;"></span>
+</div>
+
+{% if files %}
+<div class="ss-card" id="filesCard">
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Size</th>
+                    <th>Downloads</th>
+                    <th>Uploaded</th>
+                    <th>Storage</th>
+                    <th>Blockchain</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="filesBody">
+                {% for file in files %}
+                <tr class="file-row"
+                    data-name="{{ file.filename|lower }}"
+                    data-date="{{ file.upload_date|date:'U' }}"
+                    data-storage="{% if file.ipfs_cid %}ipfs{% else %}local{% endif %}"
+                    data-type="
+                        {% with n=file.filename|lower %}
+                        {% if '.pdf' in n %}pdf
+                        {% elif '.png' in n or '.jpg' in n or '.jpeg' in n or '.gif' in n or '.webp' in n %}img
+                        {% elif '.mp4' in n or '.avi' in n or '.mov' in n or '.mkv' in n %}vid
+                        {% elif '.doc' in n or '.docx' in n %}doc
+                        {% elif '.xls' in n or '.xlsx' in n or '.csv' in n %}xls
+                        {% elif '.zip' in n or '.rar' in n or '.7z' in n %}zip
+                        {% elif '.txt' in n or '.md' in n %}txt
+                        {% else %}other{% endif %}
+                        {% endwith %}
+                    ">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:20px;">
+                                {% with n=file.filename|lower %}
+                                {% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n or '.jpeg' in n %}🖼️{% elif '.mp4' in n or '.mov' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n or '.rar' in n %}📦{% else %}📄{% endif %}
+                                {% endwith %}
+                            </span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ file.filename }}</div>
+                                <div class="mono text-dim" style="font-size:10px;">{{ file.file_hash|slice:":12" }}…</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ file.file_size_display }}</td>
+                    <td style="text-align:center;">
+                            <span class="mono" style="font-size:13px;color:var(--accent);">{{ file.download_count }}</span>
+                            <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">TIMES</div>
+                        </td>
+                        <td class="mono text-dim" style="font-size:12px;">{{ file.upload_date|date:"d M Y" }}<br><span style="font-size:10px;">{{ file.upload_date|date:"H:i" }}</span></td>
+                    <td>
+                        {% if file.ipfs_cid %}
+                            <span class="ss-badge ss-badge-info">☁ IPFS</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-gray">💾 Local</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if file.blockchain_tx_hash %}
+                            <span class="ss-badge ss-badge-success"><i class="bi bi-check-circle"></i> Verified</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-gray">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <a href="{% url 'download_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-success"><i class="bi bi-download"></i></a>
+                            <a href="{% url 'share_file' file.id %}" class="ss-btn ss-btn-sm ss-btn-purple"><i class="bi bi-share"></i></a>
+                            <a href="{% url 'blockchain_verify' %}?hash={{ file.file_hash }}" class="ss-btn ss-btn-sm"><i class="bi bi-link-45deg"></i></a>
+                            <form method="POST" action="{% url 'delete_file' file.id %}" style="display:inline;" onsubmit="return confirm('Delete \'{{ file.filename }}\'?');">
+                                {% csrf_token %}
+                                <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div id="emptyState" style="display:none;text-align:center;padding:60px 0;">
+    <i class="bi bi-search" style="font-size:48px;color:var(--text-dim);display:block;margin-bottom:16px;"></i>
+    <div class="mono text-dim" style="font-size:13px;letter-spacing:2px;">NO FILES MATCH YOUR SEARCH</div>
+</div>
+{% else %}
+<div class="ss-card">
+    <div class="ss-card-body" style="text-align:center;padding:80px 24px;">
+        <i class="bi bi-folder2-open" style="font-size:56px;color:var(--text-dim);display:block;margin-bottom:16px;"></i>
+        <div class="mono" style="font-size:14px;letter-spacing:2px;color:var(--text-dim);margin-bottom:24px;">NO FILES IN YOUR VAULT</div>
+        <a href="{% url 'upload_file' %}" class="ss-btn ss-btn-primary"><i class="bi bi-cloud-upload"></i> Upload Your First File</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+const tbody = document.getElementById('filesBody');
+const allRows = tbody ? Array.from(tbody.querySelectorAll('tr.file-row')) : [];
+
+function filterFiles() {
+    if (!tbody) return;
+    const search  = document.getElementById('searchInput').value.toLowerCase().trim();
+    const type    = document.getElementById('typeFilter').value;
+    const sort    = document.getElementById('sortBy').value;
+    const storage = document.getElementById('storageFilter').value;
+
+    let rows = allRows.filter(r => {
+        if (search && !r.dataset.name.includes(search)) return false;
+        if (type && !r.dataset.type.trim().includes(type)) return false;
+        if (storage && r.dataset.storage !== storage) return false;
+        return true;
+    });
+
+    rows.sort((a, b) => {
+        if (sort === 'newest')    return b.dataset.date - a.dataset.date;
+        if (sort === 'oldest')    return a.dataset.date - b.dataset.date;
+        if (sort === 'name')      return a.dataset.name.localeCompare(b.dataset.name);
+        if (sort === 'name_desc') return b.dataset.name.localeCompare(a.dataset.name);
+        return 0;
+    });
+
+    tbody.innerHTML = '';
+    rows.forEach(r => tbody.appendChild(r));
+
+    const card  = document.getElementById('filesCard');
+    const empty = document.getElementById('emptyState');
+    if (rows.length === 0) {
+        if (card) card.style.display = 'none';
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (card) card.style.display = '';
+        if (empty) empty.style.display = 'none';
+    }
+    const count = document.getElementById('resultsCount');
+    if (count) count.textContent = `SHOWING ${rows.length} OF {{ files|length }} FILES`;
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('sortBy').value = 'newest';
+    document.getElementById('storageFilter').value = '';
+    filterFiles();
+}
+filterFiles();
+</script>
+{% endblock %}

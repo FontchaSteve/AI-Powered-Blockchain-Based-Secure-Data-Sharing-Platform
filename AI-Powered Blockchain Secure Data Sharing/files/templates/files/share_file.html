@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block title %}Share File — SecureShare{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// Share File</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">GRANT ACCESS · SET EXPIRY · MANAGE PERMISSIONS</p>
+    </div>
+    <a href="{% url 'my_files' %}" class="ss-btn"><i class="bi bi-arrow-left"></i> Back to My Files</a>
+</div>
+
+<!-- File info -->
+<div class="ss-card mb-5">
+    <div class="ss-card-header"><i class="bi bi-file-earmark-lock"></i> File Details</div>
+    <div class="ss-card-body">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <span style="font-size:40px;">
+                {% with n=file.filename|lower %}
+                {% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n or '.jpeg' in n %}🖼️{% elif '.mp4' in n or '.mov' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n %}📦{% else %}📄{% endif %}
+                {% endwith %}
+            </span>
+            <div style="flex:1;">
+                <div style="font-size:18px;font-weight:700;margin-bottom:4px;">{{ file.filename }}</div>
+                <div class="mono text-dim" style="font-size:11px;letter-spacing:1px;">
+                    SIZE: {{ file.file_size_display }} &nbsp;·&nbsp;
+                    UPLOADED: {{ file.upload_date|date:"d M Y · H:i" }} &nbsp;·&nbsp;
+                    DOWNLOADS: {{ file.download_count }}
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                {% if file.ipfs_cid %}<span class="ss-badge ss-badge-info">☁ IPFS</span>{% else %}<span class="ss-badge ss-badge-gray">💾 Local</span>{% endif %}
+                {% if file.blockchain_tx_hash %}<span class="ss-badge ss-badge-success"><i class="bi bi-check-circle"></i> On-Chain</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ss-grid ss-grid-2" style="gap:24px;">
+
+    <!-- Share Form -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-person-plus"></i> Grant Access</div>
+        <div class="ss-card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="share">
+
+                <div style="margin-bottom:20px;">
+                    <label class="ss-label">Username to share with</label>
+                    <input type="text" name="username" class="ss-input"
+                           placeholder="Enter exact username..." required autocomplete="off">
+                    <div class="mono text-dim" style="font-size:10px;margin-top:5px;letter-spacing:1px;">
+                        The user must already have a SecureShare account.
+                    </div>
+                </div>
+
+                <!-- Expiry date picker -->
+                <div style="margin-bottom:24px;">
+                    <label class="ss-label">Access Expiry</label>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+                        {% for val, label in expiry_options %}
+                        <label style="
+                            display:flex;align-items:center;justify-content:center;
+                            padding:10px 8px;border-radius:6px;cursor:pointer;
+                            border:1px solid var(--border);text-align:center;
+                            font-family:var(--mono);font-size:11px;letter-spacing:1px;
+                            color:var(--text-dim);transition:all 0.2s;
+                        " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+                           onmouseout="highlightSelected()">
+                            <input type="radio" name="expiry_days" value="{{ val }}"
+                                   {% if val == '0' %}checked{% endif %}
+                                   style="display:none;" onchange="highlightSelected()">
+                            {{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="mono text-dim" style="font-size:10px;letter-spacing:1px;">
+                        After expiry the recipient can no longer download the file.
+                    </div>
+                </div>
+
+                <button type="submit" class="ss-btn ss-btn-primary w-100">
+                    <i class="bi bi-share"></i> Share File
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Shares -->
+    <div class="ss-card">
+        <div class="ss-card-header">
+            <i class="bi bi-people"></i> Who Has Access
+            <span class="ss-badge ss-badge-info" style="margin-left:8px;">{{ current_shares|length }}</span>
+        </div>
+        <div style="padding:0;">
+            {% if current_shares %}
+                {% for share in current_shares %}
+                <div style="
+                    display:flex;align-items:center;gap:12px;
+                    padding:14px 20px;
+                    border-bottom:1px solid var(--border);
+                    {% if share.is_expired %}opacity:0.5;{% endif %}
+                ">
+                    <div style="width:36px;height:36px;border-radius:50%;
+                        background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);
+                        display:flex;align-items:center;justify-content:center;
+                        font-family:var(--mono);font-size:12px;color:var(--accent);flex-shrink:0;">
+                        {{ share.shared_with.username|slice:":2"|upper }}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:14px;">{{ share.shared_with.username }}</div>
+                        <div class="mono" style="font-size:10px;margin-top:3px;">
+                            <span class="text-dim">Shared {{ share.shared_at|date:"d M Y" }}</span>
+                            &nbsp;·&nbsp;
+                            {% if share.is_expired %}
+                                <span style="color:var(--danger);">EXPIRED</span>
+                            {% elif share.expires_at %}
+                                <span style="color:var(--warning);">{{ share.expiry_display }}</span>
+                            {% else %}
+                                <span style="color:var(--success);">Never expires</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                        {% if share.is_expired %}
+                            <span class="ss-badge ss-badge-danger">EXPIRED</span>
+                        {% else %}
+                            <span class="ss-badge ss-badge-success">ACTIVE</span>
+                        {% endif %}
+                        <form method="POST" onsubmit="return confirm('Revoke access for {{ share.shared_with.username }}?');" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="revoke">
+                            <input type="hidden" name="share_id" value="{{ share.id }}">
+                            <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger">
+                                <i class="bi bi-x"></i> Revoke
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div style="text-align:center;padding:40px 20px;">
+                <i class="bi bi-people" style="font-size:32px;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+                <div class="mono text-dim" style="font-size:11px;letter-spacing:2px;">NOT SHARED WITH ANYONE YET</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Info cards -->
+<div class="ss-grid ss-grid-3 mt-4" style="gap:16px;">
+    <div class="ss-card"><div class="ss-card-body" style="text-align:center;padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">🔐</div>
+        <div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">ENCRYPTED TRANSFER</div>
+        <div class="text-dim" style="font-size:12px;">The file stays encrypted. The recipient decrypts it on download.</div>
+    </div></div>
+    <div class="ss-card"><div class="ss-card-body" style="text-align:center;padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">⏱</div>
+        <div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">TIME-LIMITED ACCESS</div>
+        <div class="text-dim" style="font-size:12px;">Set an expiry date to automatically revoke access after a period.</div>
+    </div></div>
+    <div class="ss-card"><div class="ss-card-body" style="text-align:center;padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">🛡</div>
+        <div class="mono" style="font-size:10px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">YOU STAY IN CONTROL</div>
+        <div class="text-dim" style="font-size:12px;">Revoke access at any time. AI monitor tracks every download.</div>
+    </div></div>
+</div>
+
+<script>
+function highlightSelected() {
+    document.querySelectorAll('input[name="expiry_days"]').forEach(radio => {
+        const label = radio.closest('label');
+        if (radio.checked) {
+            label.style.borderColor = 'var(--accent)';
+            label.style.color       = 'var(--accent)';
+            label.style.background  = 'rgba(0,212,255,0.06)';
+        } else {
+            label.style.borderColor = 'var(--border)';
+            label.style.color       = 'var(--text-dim)';
+            label.style.background  = 'transparent';
+        }
+    });
+}
+// Select on click anywhere on the label
+document.querySelectorAll('input[name="expiry_days"]').forEach(radio => {
+    radio.closest('label').addEventListener('click', () => {
+        setTimeout(highlightSelected, 10);
+    });
+});
+highlightSelected();
+</script>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% block title %}Manage {{ target.username }} — Admin{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-between align-center mb-5">
+    <div>
+        <div class="ss-section-title">// Managing User: {{ target.username|upper }}</div>
+        <p class="text-dim mono" style="font-size:11px;letter-spacing:1px;">FULL USER CONTROL · SUPERUSER ACCESS</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="ss-btn"><i class="bi bi-arrow-left"></i> Back to Admin</a>
+</div>
+
+<!-- User header card -->
+<div class="ss-card mb-5">
+    <div class="ss-card-body">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+            <div style="width:64px;height:64px;border-radius:50%;
+                background:{% if target.is_superuser %}rgba(255,165,2,0.15){% else %}rgba(0,212,255,0.1){% endif %};
+                border:1px solid {% if target.is_superuser %}rgba(255,165,2,0.3){% else %}rgba(0,212,255,0.3){% endif %};
+                display:flex;align-items:center;justify-content:center;
+                font-family:var(--mono);font-size:22px;
+                color:{% if target.is_superuser %}var(--warning){% else %}var(--accent){% endif %};
+                flex-shrink:0;">{{ target.username|slice:":2"|upper }}</div>
+
+            <div style="flex:1;">
+                <div style="font-size:22px;font-weight:700;margin-bottom:4px;">{{ target.username }}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+                    {% if target.is_superuser %}<span class="ss-badge ss-badge-warning">SUPERUSER</span>{% endif %}
+                    {% if target.is_staff %}<span class="ss-badge ss-badge-info">STAFF</span>{% endif %}
+                    {% if target.is_active %}<span class="ss-badge ss-badge-success">ACTIVE</span>
+                    {% else %}<span class="ss-badge ss-badge-danger">BANNED</span>{% endif %}
+                </div>
+                <div class="mono text-dim" style="font-size:11px;">
+                    {{ target.email }} &nbsp;·&nbsp;
+                    Joined {{ target.date_joined|date:"d M Y" }} &nbsp;·&nbsp;
+                    Last login: {{ target.last_login|date:"d M Y · H:i"|default:"Never" }}
+                </div>
+            </div>
+
+            <!-- Mini stats -->
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <div class="mono text-accent" style="font-size:24px;font-weight:700;">{{ total_uploads }}</div>
+                    <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">UPLOADS</div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="mono" style="font-size:24px;font-weight:700;color:var(--success);">{{ total_downloads }}</div>
+                    <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">DOWNLOADS</div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="mono" style="font-size:24px;font-weight:700;color:var(--warning);">{{ total_logins }}</div>
+                    <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">LOGINS</div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="mono" style="font-size:24px;font-weight:700;color:#a78bfa;">{{ shares_given|length }}</div>
+                    <div class="mono text-dim" style="font-size:9px;letter-spacing:1px;">SHARES</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Two columns: info + actions -->
+<div class="ss-grid ss-grid-2 mb-5" style="gap:24px;">
+
+    <!-- Account Details -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-info-circle"></i> Account Details</div>
+        <div class="ss-card-body">
+            <table style="width:100%;border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;width:40%;">USER ID</td>
+                    <td class="mono" style="font-size:12px;padding:10px 0;">{{ target.id }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">USERNAME</td>
+                    <td style="font-size:14px;font-weight:700;padding:10px 0;">{{ target.username }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">EMAIL</td>
+                    <td style="font-size:13px;padding:10px 0;">{{ target.email }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">JOINED</td>
+                    <td class="mono" style="font-size:12px;padding:10px 0;">{{ target.date_joined|date:"d M Y · H:i" }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">LAST LOGIN</td>
+                    <td class="mono" style="font-size:12px;padding:10px 0;">{{ target.last_login|date:"d M Y · H:i"|default:"Never" }}</td>
+                </tr>
+                <tr>
+                    <td class="mono text-dim" style="font-size:10px;letter-spacing:1px;padding:10px 0;">WALLET</td>
+                    <td class="mono" style="font-size:11px;padding:10px 0;word-break:break-all;
+                        color:{% if target.wallet_address %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ target.wallet_address|default:"Not assigned" }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Actions Panel -->
+    <div class="ss-card">
+        <div class="ss-card-header"><i class="bi bi-sliders"></i> Admin Actions</div>
+        <div class="ss-card-body" style="display:flex;flex-direction:column;gap:10px;">
+
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_active">
+                <button type="submit" class="ss-btn w-100 {% if target.is_active %}ss-btn-danger{% else %}ss-btn-success{% endif %}">
+                    {% if target.is_active %}
+                        <i class="bi bi-slash-circle"></i> Ban This User
+                    {% else %}
+                        <i class="bi bi-check-circle"></i> Activate This User
+                    {% endif %}
+                </button>
+            </form>
+
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_staff">
+                <button type="submit" class="ss-btn w-100">
+                    {% if target.is_staff %}
+                        <i class="bi bi-person-dash"></i> Remove Staff Privileges
+                    {% else %}
+                        <i class="bi bi-person-check"></i> Grant Staff Privileges
+                    {% endif %}
+                </button>
+            </form>
+
+            <form method="POST">
+                {% csrf_token %}<input type="hidden" name="action" value="reset_wallet">
+                <button type="submit" class="ss-btn ss-btn-purple w-100">
+                    <i class="bi bi-wallet2"></i> Reassign Blockchain Wallet
+                </button>
+            </form>
+
+            <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:12px;">
+                {% if target != request.user %}
+                <form method="POST" onsubmit="return confirm('PERMANENTLY delete {{ target.username }} and ALL their data? This cannot be undone.');">
+                    {% csrf_token %}<input type="hidden" name="action" value="delete_user">
+                    <button type="submit" class="ss-btn ss-btn-danger w-100">
+                        <i class="bi bi-person-x-fill"></i> Delete User & All Their Data
+                    </button>
+                </form>
+                {% else %}
+                <div class="ss-alert ss-alert-info" style="font-size:12px;">You cannot delete your own account.</div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- User's Files -->
+<div class="ss-card mb-5">
+    <div class="ss-card-header">
+        <i class="bi bi-file-earmark-lock"></i> Files ({{ files|length }})
+        <span class="text-dim mono" style="margin-left:auto;font-size:10px;">Click trash to delete any file</span>
+    </div>
+    {% if files %}
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead><tr><th>File</th><th>Size</th><th>Storage</th><th>Uploaded</th><th>Blockchain</th><th>Delete</th></tr></thead>
+            <tbody>
+                {% for f in files %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:18px;">
+                                {% with n=f.filename|lower %}{% if '.pdf' in n %}📕{% elif '.png' in n or '.jpg' in n %}🖼️{% elif '.mp4' in n %}🎬{% elif '.doc' in n %}📝{% elif '.xls' in n %}📊{% elif '.zip' in n %}📦{% else %}📄{% endif %}{% endwith %}
+                            </span>
+                            <div>
+                                <div style="font-weight:600;font-size:13px;">{{ f.filename }}</div>
+                                <div class="mono text-dim" style="font-size:9px;">{{ f.file_hash|slice:":16" }}…</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="mono text-dim" style="font-size:12px;">{{ f.file_size_display }}</td>
+                    <td>{% if f.ipfs_cid %}<span class="ss-badge ss-badge-info">☁ IPFS</span>{% else %}<span class="ss-badge ss-badge-gray">💾 Local</span>{% endif %}</td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ f.upload_date|date:"d M Y · H:i" }}</td>
+                    <td>{% if f.blockchain_tx_hash %}<span class="ss-badge ss-badge-success">Verified</span>{% else %}<span class="ss-badge ss-badge-gray">—</span>{% endif %}</td>
+                    <td>
+                        <form method="POST" action="{% url 'admin_delete_file' f.id %}" onsubmit="return confirm('Delete {{ f.filename }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="ss-btn ss-btn-sm ss-btn-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="ss-card-body" style="text-align:center;padding:30px;"><div class="mono text-dim" style="font-size:12px;letter-spacing:2px;">NO FILES</div></div>
+    {% endif %}
+</div>
+
+<!-- Shares -->
+{% if shares_given %}
+<div class="ss-card mb-5">
+    <div class="ss-card-header"><i class="bi bi-share"></i> Files Shared By This User ({{ shares_given|length }})</div>
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead><tr><th>File</th><th>Shared With</th><th>Date</th><th>Can Download</th></tr></thead>
+            <tbody>
+                {% for s in shares_given %}
+                <tr>
+                    <td style="font-size:13px;font-weight:600;">{{ s.file.filename }}</td>
+                    <td><a href="{% url 'admin_user_detail' s.shared_with.id %}" style="color:var(--accent);text-decoration:none;">{{ s.shared_with.username }}</a></td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ s.shared_at|date:"d M Y" }}</td>
+                    <td>{% if s.can_download %}<span class="ss-badge ss-badge-success">Yes</span>{% else %}<span class="ss-badge ss-badge-gray">No</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Activity Log -->
+<div class="ss-card">
+    <div class="ss-card-header"><i class="bi bi-list-ul"></i> Activity Log (last 30 events)</div>
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead><tr><th>Action</th><th>Time</th><th>IP</th><th>Status</th><th>Details</th></tr></thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="mono" style="font-size:12px;
+                        {% if log.action == 'upload' %}color:var(--accent);
+                        {% elif log.action == 'failed_login' or log.action == 'delete' %}color:var(--danger);
+                        {% elif log.action == 'download' %}color:var(--success);
+                        {% elif log.action == 'share' %}color:#a78bfa;
+                        {% else %}color:var(--text-dim);{% endif %}">
+                        {{ log.action|upper }}
+                    </td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ log.timestamp|date:"d M Y · H:i" }}</td>
+                    <td class="mono text-dim" style="font-size:11px;">{{ log.ip_address|default:"—" }}</td>
+                    <td>{% if log.success %}<span class="ss-badge ss-badge-success">OK</span>{% else %}<span class="ss-badge ss-badge-danger">FAIL</span>{% endif %}</td>
+                    <td class="text-dim" style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.details|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align:center;padding:30px;" class="mono text-dim">NO ACTIVITY</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
